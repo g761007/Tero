@@ -1,0 +1,14 @@
+name: PodConsumer
+options:
+  bundleIdPrefix: com.terotab
+  deploymentTarget: { iOS: "15.0" }
+targets:
+  PodConsumer:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.terotab.PodConsumer

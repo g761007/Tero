@@ -1,0 +1,13 @@
+platform :ios, '15.0'
+
+# `:linkage => :static` 是刻意的：它產出真的 framework（有 Headers/），ObjC++ 才匯入得到
+# 產生的介面；同時維持靜態連結，不必處理 embed。純靜態程式庫模式下 `.mm` 會失敗
+# （`@import` 需要 -fcxx-modules），見 docs/spikes/0001-objc-interop.md。
+use_frameworks! :linkage => :static
+install! 'cocoapods', :warn_for_unused_master_specs_repo => false
+
+target 'PodConsumer' do
+  # 由 check-podspec.sh 以 :path 指向 repo 根目錄——驗的是這份 podspec，
+  # 不是 trunk 上或 git 上的某一版。
+  pod 'Tero', :path => ENV.fetch('TERO_PODSPEC_ROOT')
+end

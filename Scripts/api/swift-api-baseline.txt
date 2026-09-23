@@ -1,0 +1,337 @@
+@available(*, unavailable) public override init(frame: CGRect)
+@available(*, unavailable) public required init?(coder: NSCoder)
+@available(swift, obsoleted: 1.0) @objc(badgeWithValue:) public static func badgeForObjectiveC(withValue text: String) -> TeroTabBadge { value(text) }
+@available(swift, obsoleted: 1.0) @objc(dotBadge) public static func dotBadgeForObjectiveC() -> TeroTabBadge { dot() }
+@discardableResult @objc(popToViewController:animated:) public func popToViewController(_ viewController: UIViewController, animated: Bool) -> [UIViewController]
+@discardableResult @objc(popViewControllerAnimated:) public func popViewController(animated: Bool) -> UIViewController?
+@discardableResult @objc(selectTabAtIndex:animated:) public func selectTab(at index: Int, animated: Bool) -> Bool
+@discardableResult @objc(selectTabWithIdentifier:animated:) public func selectTab(withIdentifier identifier: String, animated: Bool) -> Bool
+@discardableResult @objc(setTabBarPresentationState:animated:) public func setTabBarPresentationState( _ state: TeroTabBarPresentationState, animated: Bool ) -> Bool
+@nonobjc public static func dot() -> TeroTabBadge
+@nonobjc public static func value(_ text: String) -> TeroTabBadge
+@nonobjc public var selectedTabIndex: Int?
+@objc optional func teroNavigationContainer( _ container: TeroNavigationContainer, didShow viewController: UIViewController, animated: Bool )
+@objc optional func teroNavigationContainer( _ container: TeroNavigationContainer, willShow viewController: UIViewController, animated: Bool )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, didChangeTabBarPresentationState state: TeroTabBarPresentationState )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, didLongPress tab: TeroTab )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, didReselect tab: TeroTab )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, didSelect tab: TeroTab, source: TeroTabSelectionSource )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, didTrigger actionItem: TeroTabActionItem )
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, shouldSelect tab: TeroTab, source: TeroTabSelectionSource ) -> Bool
+@objc optional func teroTabBarController( _ tabController: TeroTabBarController, willChangeTabBarPresentationState state: TeroTabBarPresentationState )
+@objc optional func updateContentView( _ contentView: UIView, presentationProgress: CGFloat, animated: Bool )
+@objc optional func updateContentView( _ contentView: UIView, selected: Bool, presentationState: TeroTabBarPresentationState, animated: Bool )
+@objc optional func updateContentView( _ contentView: UIView, selectionProgress: CGFloat, animated: Bool )
+@objc optional func updateTeroNavigationChrome(_ chromeView: UIView, collapseProgress: CGFloat)
+@objc optional var preferredTeroTabBarScrollBehavior: TeroTabBarScrollBehavior { get }
+@objc optional var preferredTeroTabBarUserInterfaceStyle: UIUserInterfaceStyle { get }
+@objc optional var preferredTeroTabVisibilityPolicy: TeroTabVisibilityPolicy { get }
+@objc optional var teroNavigationChromeCollapsedHeight: CGFloat { get }
+@objc public convenience init(image: UIImage?, material: TeroNavigationButtonMaterial = .plain)
+@objc public convenience init(title: String?, material: TeroNavigationButtonMaterial = .plain)
+@objc public dynamic private(set) var selectedIndex: Int = NSNotFound
+@objc public dynamic private(set) var selectedTab: TeroTab?
+@objc public enum TeroChromeScrollBehavior: Int
+@objc public enum TeroNavigationButtonMaterial: Int
+@objc public enum TeroTabBadgeStyle: Int
+@objc public enum TeroTabBarPresentationState: Int
+@objc public enum TeroTabBarScrollBehavior: Int
+@objc public enum TeroTabBarStyle: Int
+@objc public enum TeroTabGlassTintMode: Int
+@objc public enum TeroTabMinimizedLayout: Int
+@objc public enum TeroTabMorePresentationStyle: Int
+@objc public enum TeroTabReduceMotionBehavior: Int
+@objc public enum TeroTabSelectionSource: Int
+@objc public enum TeroTabSwipeSelectionMode: Int
+@objc public enum TeroTabVisibilityPolicy: Int
+@objc public func applyCollapseProgress(_ progress: CGFloat)
+@objc public func setNeedsChromeGeometryUpdate()
+@objc public init()
+@objc public internal(set) var chromeCollapseProgress: CGFloat = 0
+@objc public let compact: TeroTabLayoutConfiguration
+@objc public let regular: TeroTabLayoutConfiguration
+@objc public let tabBar: TeroTabBar
+@objc public override init()
+@objc public override init(frame: CGRect)
+@objc public private(set) var actionItem: TeroTabActionItem?
+@objc public private(set) var presentationState: TeroTabBarPresentationState = .expanded
+@objc public private(set) var style: TeroTabBarStyle
+@objc public private(set) var tabBarPresentationState: TeroTabBarPresentationState = .expanded
+@objc public private(set) var tabs: [TeroTab] = []
+@objc public private(set) var viewControllers: [UIViewController] = []
+@objc public protocol TeroNavigationChromeProviding: NSObjectProtocol
+@objc public protocol TeroNavigationContainerDelegate: NSObjectProtocol
+@objc public protocol TeroScrollProviding: NSObjectProtocol
+@objc public protocol TeroTabBarAppearanceProviding: NSObjectProtocol
+@objc public protocol TeroTabBarControllerDelegate: NSObjectProtocol
+@objc public protocol TeroTabBarScrollBehaviorProviding: NSObjectProtocol
+@objc public protocol TeroTabContentProvider: NSObjectProtocol
+@objc public protocol TeroTabInteractiveContentProvider: TeroTabContentProvider
+@objc public protocol TeroTabVisibilityProviding: NSObjectProtocol
+@objc public static func defaultConfiguration() -> TeroTabBarConfiguration
+@objc public static let primaryHeight: CGFloat = 44
+@objc public var buttonTitleColor: UIColor?
+@objc public var chromeCollapseDistance: CGFloat = 120
+@objc public var chromeScrollBehavior: TeroChromeScrollBehavior = .hidePrimary
+@objc public var classicActionSize: CGSize
+@objc public var classicBackgroundColor: UIColor
+@objc public var classicBarHeight: CGFloat
+@objc public var classicBlurEffectStyle: UIBlurEffect.Style
+@objc public var classicContentInsets: UIEdgeInsets
+@objc public var classicSeparatorColor: UIColor?
+@objc public var classicUsesBlurEffect: Bool
+@objc public var defaultButtonMaterial: TeroNavigationButtonMaterial = .automatic
+@objc public var floatingGlassActionSize: CGSize
+@objc public var floatingGlassActionSpacing: CGFloat
+@objc public var floatingGlassBottomInset: CGFloat
+@objc public var floatingGlassContainerSpacing: CGFloat
+@objc public var floatingGlassCornerRadius: CGFloat
+@objc public var floatingGlassExpandedHeight: CGFloat
+@objc public var floatingGlassHidesTitlesWhenMinimized: Bool
+@objc public var floatingGlassHorizontalInset: CGFloat
+@objc public var floatingGlassMinimizedCornerRadius: CGFloat
+@objc public var floatingGlassMinimizedHeight: CGFloat
+@objc public var floatingGlassMinimizedLayout: TeroTabMinimizedLayout
+@objc public var floatingGlassTintColor: UIColor?
+@objc public var floatingGlassTintMode: TeroTabGlassTintMode
+@objc public var interactivePopGestureRecognizer: UIGestureRecognizer { edgePanRecognizer }
+@objc public var isInteractivePopGestureEnabled: Bool = true
+@objc public var isScrollEdgeEffectEnabled = true
+@objc public var leadingItems: [UIView] = []
+@objc public var material: TeroNavigationButtonMaterial = .plain
+@objc public var moreItem: TeroTabMoreItem
+@objc public var morePresentationStyle: TeroTabMorePresentationStyle = .automatic
+@objc public var motionAllowsInterruptibleTransition: Bool
+@objc public var motionContentTransitionDuration: TimeInterval
+@objc public var motionMinimizeDuration: TimeInterval
+@objc public var motionReduceMotionBehavior: TeroTabReduceMotionBehavior
+@objc public var motionReselectDuration: TimeInterval
+@objc public var motionRestoreDuration: TimeInterval
+@objc public var motionSelectionDampingRatio: CGFloat
+@objc public var motionSelectionDuration: TimeInterval
+@objc public var motionSelectionResponse: TimeInterval
+@objc public var motionSelectionStretch: CGFloat
+@objc public var normalTintColor: UIColor
+@objc public var overflowTabs: [TeroTab]
+@objc public var requestedStyle: TeroTabBarStyle
+@objc public var rootViewController: UIViewController? { viewControllers.first }
+@objc public var scrollBehavior: TeroTabBarScrollBehavior
+@objc public var scrollDirectionLockDistance: CGFloat
+@objc public var scrollDownwardTranslationThreshold: CGFloat
+@objc public var scrollUpwardTranslationThreshold: CGFloat
+@objc public var scrollVelocityThreshold: CGFloat
+@objc public var secondaryView: UIView?
+@objc public var selectedTintColor: UIColor
+@objc public var selectedViewController: UIViewController?
+@objc public var showsBackdrop: Bool = true
+@objc public var style: TeroTabBarStyle = .classic
+@objc public var swipeSelectionMode: TeroTabSwipeSelectionMode = .disabled
+@objc public var tabBarStyle: TeroTabBarStyle
+@objc public var title: String?
+@objc public var titleColor: UIColor?
+@objc public var titleFont: UIFont?
+@objc public var titleView: UIView?
+@objc public var topViewController: UIViewController? { viewControllers.last }
+@objc public var trailingItems: [UIView] = []
+@objc public var transitionDuration: TimeInterval = 0.35
+@objc public var visibleTabs: [TeroTab]
+@objc public weak var delegate: TeroNavigationContainerDelegate?
+@objc public weak var delegate: TeroTabBarControllerDelegate?
+@objc(applyConfiguration:animated:) public func applyConfiguration(_ configuration: TeroTabBarConfiguration, animated: Bool)
+@objc(bindToNavigationItem:backAction:) public func bind(to navigationItem: UINavigationItem?, backAction: (() -> Void)?)
+@objc(coordinateNavigationTransition:toViewController:animated:) public func coordinateNavigationTransition( _ navigationController: UINavigationController, to destination: UIViewController, animated: Bool )
+@objc(currentConfiguration) public func currentConfiguration() -> TeroTabBarConfiguration
+@objc(initWithConfiguration:) public init(configuration: TeroTabBarConfiguration)
+@objc(initWithIdentifier:image:) public init(identifier: String, image: UIImage?)
+@objc(initWithIdentifier:viewController:item:) public init(identifier: String, viewController: UIViewController, item: TeroTabItem)
+@objc(initWithRootViewController:) public convenience init(rootViewController: UIViewController)
+@objc(initWithTitle:image:selectedImage:) public init(title: String?, image: UIImage?, selectedImage: UIImage?)
+@objc(popToRootViewControllerAnimated:) public func popToRootViewController(animated: Bool)
+@objc(pushViewController:animated:) public func pushViewController(_ viewController: UIViewController, animated: Bool)
+@objc(refreshScrollTracking) public func refreshScrollTracking()
+@objc(reloadAllTabsAnimated:) public func reloadAllTabs(animated: Bool)
+@objc(reloadTabWithIdentifier:animated:) public func reloadTab(withIdentifier identifier: String, animated: Bool)
+@objc(setActionItem:animated:) public func setActionItem(_ actionItem: TeroTabActionItem?, animated: Bool)
+@objc(setBadge:forTabWithIdentifier:animated:) public func setBadge( _ badge: TeroTabBadge?, forTabWithIdentifier identifier: String, animated: Bool )
+@objc(setTabs:selectedIdentifier:animated:) public func setTabs(_ newTabs: [TeroTab], selectedIdentifier: String?, animated: Bool)
+@objc(setViewControllers:animated:) public func setViewControllers(_ newViewControllers: [UIViewController], animated: Bool)
+@objcMembers public final class TeroTab: NSObject
+@objcMembers public final class TeroTabActionItem: NSObject
+@objcMembers public final class TeroTabBadge: NSObject, NSCopying
+@objcMembers public final class TeroTabItem: NSObject
+@objcMembers public final class TeroTabLayoutConfiguration: NSObject, NSCopying
+@objcMembers public final class TeroTabMoreItem: NSObject, NSCopying
+TeroChromeScrollBehavior.case fixed
+TeroChromeScrollBehavior.case hidePrimary
+TeroNavigationButtonMaterial.case automatic
+TeroNavigationButtonMaterial.case glass
+TeroNavigationButtonMaterial.case plain
+TeroTabBadgeStyle.case dot
+TeroTabBadgeStyle.case value
+TeroTabBarPresentationState.case expanded
+TeroTabBarPresentationState.case hidden
+TeroTabBarPresentationState.case minimized
+TeroTabBarScrollBehavior.case hideOnScrollDown
+TeroTabBarScrollBehavior.case inherit
+TeroTabBarScrollBehavior.case minimizeOnScrollDown
+TeroTabBarScrollBehavior.case none
+TeroTabBarStyle.case classic
+TeroTabBarStyle.case floatingGlass
+TeroTabGlassTintMode.case automatic
+TeroTabGlassTintMode.case tinted
+TeroTabMinimizedLayout.case selectedOnly
+TeroTabMinimizedLayout.case uniform
+TeroTabMorePresentationStyle.case automatic
+TeroTabMorePresentationStyle.case menu
+TeroTabMorePresentationStyle.case popover
+TeroTabMorePresentationStyle.case sheet
+TeroTabReduceMotionBehavior.case crossFade
+TeroTabReduceMotionBehavior.case instant
+TeroTabSelectionIndicatorMaterial.case automatic
+TeroTabSelectionIndicatorMaterial.case glass
+TeroTabSelectionIndicatorMaterial.case solid
+TeroTabSelectionIndicatorStyle.case always
+TeroTabSelectionIndicatorStyle.case automatic
+TeroTabSelectionIndicatorStyle.case never
+TeroTabSelectionSource.case initial
+TeroTabSelectionSource.case overflow
+TeroTabSelectionSource.case programmatic
+TeroTabSelectionSource.case user
+TeroTabSwipeSelectionMode.case disabled
+TeroTabSwipeSelectionMode.case drag
+TeroTabSwipeSelectionMode.case swipe
+TeroTabVisibilityPolicy.case expanded
+TeroTabVisibilityPolicy.case hidden
+TeroTabVisibilityPolicy.case inherit
+func makeContentView() -> UIView
+func makeTeroNavigationChromeView() -> UIView
+public convenience init()
+public enum TeroTabSelectionIndicatorMaterial
+public enum TeroTabSelectionIndicatorStyle
+public final class TeroNavigationBar: UIView
+public final class TeroNavigationButton: UIButton
+public final class TeroNavigationContainer: UIViewController
+public final class TeroTabBar: UIView
+public final class TeroTabBarConfiguration: NSObject, NSCopying
+public final class TeroTabBarController: UIViewController
+public func copy(with zone: NSZone? = nil) -> Any
+public init() {}
+public let identifier: String
+public let item: TeroTabItem
+public let viewController: UIViewController
+public override func didMoveToWindow()
+public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView?
+public override func layoutSubviews()
+public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool
+public override func setTitleColor(_ color: UIColor?, for state: UIControl.State)
+public override func viewDidAppear(_ animated: Bool)
+public override func viewDidDisappear(_ animated: Bool)
+public override func viewDidLayoutSubviews()
+public override func viewDidLoad()
+public override func viewSafeAreaInsetsDidChange()
+public override func viewWillAppear(_ animated: Bool)
+public override func viewWillDisappear(_ animated: Bool)
+public override func viewWillLayoutSubviews()
+public override init()
+public override var childForHomeIndicatorAutoHidden: UIViewController? { selectedViewController }
+public override var childForHomeIndicatorAutoHidden: UIViewController? { topViewController }
+public override var childForScreenEdgesDeferringSystemGestures: UIViewController? { selectedViewController }
+public override var childForScreenEdgesDeferringSystemGestures: UIViewController? { topViewController }
+public override var childForStatusBarHidden: UIViewController? { selectedViewController }
+public override var childForStatusBarHidden: UIViewController? { topViewController }
+public override var childForStatusBarStyle: UIViewController? { selectedViewController }
+public override var childForStatusBarStyle: UIViewController? { topViewController }
+public override var intrinsicContentSize: CGSize
+public override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation
+public override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
+public override var supportedInterfaceOrientations: UIInterfaceOrientationMask
+public struct TeroClassicTabBarAppearance
+public struct TeroFloatingGlassAppearance
+public struct TeroTabBadgeAppearance
+public struct TeroTabItemAppearance
+public struct TeroTabMotionConfiguration
+public struct TeroTabScrollConfiguration
+public var accessibilityIdentifier: String?
+public var actionSize: CGSize = CGSize(width: 44, height: 44)
+public var actionSize: CGSize = CGSize(width: 56, height: 56)
+public var actionSpacing: CGFloat = 8
+public var allowsInterruptibleTransition: Bool = true
+public var backgroundColor: UIColor = .systemBackground
+public var backgroundColor: UIColor = .systemRed
+public var backgroundColor: UIColor?
+public var badge: TeroTabBadge?
+public var badgeAppearance = TeroTabBadgeAppearance()
+public var barHeight: CGFloat = 49
+public var behavior: TeroTabBarScrollBehavior = .none
+public var blurEffectStyle: UIBlurEffect.Style = .systemChromeMaterial
+public var bottomInset: CGFloat = 21
+public var classicAppearance = TeroClassicTabBarAppearance()
+public var contentInsets: UIEdgeInsets = .zero
+public var contentInsets: UIEdgeInsets = UIEdgeInsets(top: 2, left: 5, bottom: 2, right: 5)
+public var contentProvider: TeroTabContentProvider?
+public var contentSize: CGSize = CGSize(width: 28, height: 28)
+public var contentTransitionDuration: TimeInterval = 0.3
+public var cornerRadius: CGFloat = 28
+public var directionLockDistance: CGFloat = 8
+public var dotSize: CGSize = CGSize(width: 8, height: 8)
+public var downwardTranslationThreshold: CGFloat = 40
+public var expandedHeight: CGFloat = 56
+public var floatingGlassAppearance = TeroFloatingGlassAppearance()
+public var font: UIFont = .systemFont(ofSize: 11, weight: .semibold)
+public var font: UIFont?
+public var glassContainerSpacing: CGFloat = 12
+public var glassTintColor: UIColor?
+public var glassTintMode: TeroTabGlassTintMode = .automatic
+public var hidesTitlesWhenMinimized: Bool = true
+public var horizontalInset: CGFloat = 16
+public var image: UIImage?
+public var isEnabled: Bool = true
+public var itemAppearance = TeroTabItemAppearance()
+public var maximumVisibleItems: Int = 5
+public var minimizeDuration: TimeInterval = 0.28
+public var minimizedCornerRadius: CGFloat = 18
+public var minimizedHeight: CGFloat = 36
+public var minimizedLayout: TeroTabMinimizedLayout = .uniform
+public var minimumSize: CGSize = .zero
+public var minimumSize: CGSize = CGSize(width: 18, height: 18)
+public var motion = TeroTabMotionConfiguration()
+public var normalTintColor: UIColor = .secondaryLabel
+public var offset: CGPoint = .zero
+public var overflowImage: UIImage?
+public var preferredTeroTabBarScrollBehavior: TeroTabBarScrollBehavior
+public var preferredTeroTabBarUserInterfaceStyle: UIUserInterfaceStyle
+public var preferredTeroTabVisibilityPolicy: TeroTabVisibilityPolicy
+public var reduceMotionBehavior: TeroTabReduceMotionBehavior = .crossFade
+public var reselectDuration: TimeInterval = 0.28
+public var restoreDuration: TimeInterval = 0.22
+public var scrollConfiguration = TeroTabScrollConfiguration()
+public var selectedImage: UIImage?
+public var selectedTintColor: UIColor = .tintColor
+public var selectedTitleFont: UIFont = .systemFont(ofSize: 10, weight: .semibold)
+public var selectionDampingRatio: CGFloat = 0.84
+public var selectionDuration: TimeInterval = 0.4
+public var selectionIconOvershoot: CGFloat = 0.09
+public var selectionIconScale: CGFloat = 0.92
+public var selectionIndicatorColor: UIColor = UIColor { traits in
+public var selectionIndicatorCornerRadius: CGFloat?
+public var selectionIndicatorGlassTint: UIColor = UIColor { traits in
+public var selectionIndicatorInsets: UIEdgeInsets = UIEdgeInsets(top: 4, left: 6, bottom: 4, right: 6)
+public var selectionIndicatorMaterial: TeroTabSelectionIndicatorMaterial = .automatic
+public var selectionIndicatorStyle: TeroTabSelectionIndicatorStyle = .automatic
+public var selectionResponse: TimeInterval? = 0.4
+public var selectionSize: CGSize = .zero
+public var selectionStretch: CGFloat = 0.5
+public var separatorColor: UIColor? = .separator
+public var style: TeroTabBadgeStyle = .dot
+public var teroTrackingScrollView: UIScrollView?
+public var textColor: UIColor = .white
+public var textColor: UIColor?
+public var title: String?
+public var titleFont: UIFont = .systemFont(ofSize: 10, weight: .medium)
+public var titleSpacing: CGFloat = 4
+public var upwardTranslationThreshold: CGFloat = 24
+public var usesBlurEffect: Bool = true
+public var value: String?
+public var velocityThreshold: CGFloat = 120
+var teroNavigationChromeHeight: CGFloat { get }
+var teroTrackingScrollView: UIScrollView? { get }

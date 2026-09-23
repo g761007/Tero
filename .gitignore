@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# Xcode: user-specific state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Xcode: build output
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local agent tooling state
+.omc/
+
+# XcodeGen 產生的專案檔
+Demo/**/*.xcodeproj
+
+# 維護者本機才有的檔案，不進這個 repo（docs/ 是指向文件分支的 symlink）
+/docs
+/CLAUDE.md
+/CONTEXT.md

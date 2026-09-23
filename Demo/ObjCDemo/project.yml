@@ -1,0 +1,28 @@
+name: ObjCDemo
+options:
+  bundleIdPrefix: com.terotab
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+targets:
+  ObjCDemo:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      # Source drop：套件原始碼直接編進 App target，不經 SPM（計畫書 §2）
+      - path: ../../Sources/Tero
+        name: TeroSources
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        # iOS 26 SDK 要求 scene lifecycle，沒有這個 manifest 會在啟動時直接失敗。
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        PRODUCT_BUNDLE_IDENTIFIER: com.terotab.ObjCDemo
+        SWIFT_VERSION: 5.0
+        SWIFT_OBJC_INTERFACE_HEADER_NAME: ObjCDemo-Swift.h
+        CLANG_ENABLE_MODULES: YES
+        SWIFT_OBJC_BRIDGING_HEADER: ""

@@ -1,0 +1,129 @@
+name: CI
+
+# 五個 job 只在 g761007/Tero 自動執行；fork 與其他副本要跑時，用 Actions 頁面的
+# Run workflow 手動觸發。合併前在本機跑同一組指令：./Scripts/verify-local.sh。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 兩條交付路徑都以同一個模擬器驗證。
+  # 不指定 OS 時 xcodebuild 解析為 latest，因此機型必須是每一代 runtime 都提供的
+  # 基礎款；Pro 機型在較新的 runtime 可能不存在，會讓整個 job 找不到裝置。
+  # 只說機型；destination 由 Scripts/resolve-simulator.sh 解析成 UDID。
+  # 名稱直接餵給 xcodebuild 在某些機器上解析不到，而 runner 映像檔的機型也會換。
+  TERO_DEVICE: iPhone 17
+
+jobs:
+  test:
+    name: Swift 測試
+    if: github.repository == 'g761007/Tero' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: 確認工具鏈有 iOS 26 SDK
+        # FloatingGlass 需要 iOS 26 SDK 才能編譯（UIGlassEffect）。
+        # runner 的 Xcode 若較舊，這裡會明確失敗，而不是在編譯階段丟一堆錯。
+        run: |
+          xcodebuild -version
+          swift --version
+          if ! xcodebuild -showsdks | grep -q "iphonesimulator26"; then
+            echo "::error::runner 缺少 iOS 26 Simulator SDK。請改用具備 Xcode 26 的 runner。"
+            xcodebuild -showsdks
+            exit 1
+          fi
+      - name: 測試
+        run: |
+          xcodebuild test \
+            -scheme Tero \
+            -destination "$(./Scripts/resolve-simulator.sh)" \
+            -resultBundlePath TestResults.xcresult
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-results
+          path: TestResults.xcresult
+
+  swift-demo:
+    name: Swift Demo（SPM）
+    if: github.repository == 'g761007/Tero' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: brew install xcodegen
+      - name: 產生並建置
+        run: |
+          # 在 cd 之前解析：Scripts/ 在 repo 根目錄，cd 之後這個相對路徑就不存在了。
+          dest=$(./Scripts/resolve-simulator.sh)
+          cd Demo/SwiftDemo
+          xcodegen generate
+          xcodebuild build \
+            -project SwiftDemo.xcodeproj \
+            -scheme SwiftDemo \
+            -destination "$dest"
+
+  objc-demo:
+    name: Objective-C Demo（source drop）
+    if: github.repository == 'g761007/Tero' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: brew install xcodegen
+      - name: 產生並建置
+        # 這條路徑驗證的是「套件原始碼直接編進 ObjC App target」，不經 SPM。
+        run: |
+          # 在 cd 之前解析，理由同上。
+          dest=$(./Scripts/resolve-simulator.sh)
+          cd Demo/ObjCDemo
+          xcodegen generate
+          xcodebuild build \
+            -project ObjCDemo.xcodeproj \
+            -scheme ObjCDemo \
+            -destination "$dest"
+
+  demo-launch:
+    name: Demo 啟動
+    if: github.repository == 'g761007/Tero' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: brew install xcodegen
+      - name: 兩個 Demo 必須啟動得起來
+        # build 成功不代表跑得起來：iOS 26 的 scene lifecycle 缺失只會在啟動時失敗。
+        run: ./Scripts/check-demos-launch.sh
+
+  guards:
+    name: 資源、私有 API 與公開 API 守門
+    if: github.repository == 'g761007/Tero' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      # xcodegen 產 fixture 的 .xcodeproj；cocoapods 給 podspec 守門用。
+      # runner 映像檔通常已內建 cocoapods，但寫出來比賭它在好。
+      - run: brew install xcodegen cocoapods
+      - name: 套件內不得依賴資源檔（ADR-0007）
+        run: ./Scripts/check-no-resources.sh
+      - name: 套件內不得觸碰私有 API
+        run: ./Scripts/check-no-private-api.sh
+      - name: 外觀更新請求必須成對
+        run: ./Scripts/check-appearance-update-pairing.sh
+      - name: 拖曳手勢必須真的接到派送點
+        run: ./Scripts/check-drag-gesture-wiring.sh
+      - name: shell 變數展開在 UTF-8 locale 下安全
+        run: ./Scripts/check-shell-locale-safety.sh
+      - name: podspec 要能被 Objective-C App 裝起來並編過
+        # runner 的 Xcode 26 裝了 Metal Toolchain 元件，TOOLCHAIN_DIR 因此指向它；CocoaPods 以
+        # ${TOOLCHAIN_DIR}/usr/lib/swift 設的搜尋路徑裡沒有 swiftCompatibility56，自己沒有 Swift
+        # 原始碼的 fixture App 就連結失敗（actions/runner-images#13135）。README 的 CocoaPods 一節寫了同一條。
+        env:
+          TOOLCHAINS: com.apple.dt.toolchain.XcodeDefault
+        run: ./Scripts/check-podspec.sh
+      - name: 公開 API 與 Objective-C 介面 diff
+        run: ./Scripts/check-public-api.sh

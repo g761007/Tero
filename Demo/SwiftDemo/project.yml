@@ -1,0 +1,37 @@
+name: SwiftDemo
+options:
+  bundleIdPrefix: com.terotab
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+packages:
+  Tero:
+    path: ../..
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios.git
+    from: 4.6.0
+
+targets:
+  SwiftDemo:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - Resources
+    dependencies:
+      - package: Tero
+        product: Tero
+      - package: Lottie
+        product: Lottie
+    settings:
+      base:
+        # 計畫書 §46 的正式名稱。target 名稱維持 SwiftDemo：它是建置識別，
+        # 五支腳本與 CI 都依它取值，改了只換來風險，換不到使用者看得見的東西。
+        INFOPLIST_KEY_CFBundleDisplayName: Tero Navigation Lab
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        GENERATE_INFOPLIST_FILE: YES
+        # iOS 26 SDK 要求 scene lifecycle，沒有這個 manifest 會在啟動時直接失敗。
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.terotab.SwiftDemo
