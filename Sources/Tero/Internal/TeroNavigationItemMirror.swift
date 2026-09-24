@@ -112,10 +112,15 @@ internal final class TeroNavigationItemMirror: NSObject {
             // `UIBarButtonItem(barButtonSystemItem:)` 正是這種：實測 done／cancel／add
             // 的 title、image、customView **全部是 nil**。而 `systemItem` 沒有公開的
             // getter，所以 Tero 無法把它對應回 SF Symbol 或文字——能做的只有講出來。
+            //
+            // 舊專案裡同樣三者皆 nil 的還有兩種，改法各不相同：藏返回鍵的空 left item，
+            // 與 `fixedSpace`／`flexibleSpace` 的 spacer。鏡射分不出這三種，所以訊息全部列出。
             if barItem.image == nil, barItem.title?.isEmpty ?? true {
                 TeroDiagnostics.report(
-                    "UIBarButtonItem 沒有 title、image 或 customView，鏡射只能畫出空白按鈕。"
-                    + "系統型的 item（barButtonSystemItem:）就是這種——請改用明確的 title 或 image。"
+                    "UIBarButtonItem 沒有 title、image 或 customView，鏡射只能畫出空白按鈕。常見的三種來源："
+                    + "系統型的 item（barButtonSystemItem:）請改用明確的 title 或 image；"
+                    + "用來藏返回鍵的空 item（initWithTitle:nil target:nil action:nil）請改成 "
+                    + "navigationItem.hidesBackButton = YES；fixedSpace／flexibleSpace 的 spacer 請直接刪掉。"
                 )
             }
             // 材質一律建成 `.automatic`，由 `TeroNavigationBar` 在 `rebuild` 時套上它的

@@ -684,6 +684,8 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **六、底部 sheet 不要包導覽容器。** iOS 26 會接管導覽容器的呈現，於是 sheet 的圓角與位置就不再由你的 animator 決定——圓角變成系統的、指定的高度失效。為了一條標題列而包一層並不划算，做一個純 view 的標題列即可。
 
+**七、藏返回鍵請用 `hidesBackButton`。** `UINavigationController` 時代常用一顆空的 left item（`initWithTitle:nil target:nil action:nil`）把返回鍵藏起來。鏡射分不出這顆 item 和壞掉的 item，所以 Debug build 會停在空白按鈕的 assertion（見[鏡射 `UINavigationItem`](#鏡射-uinavigationitem)）；請改成 `navigationItem.hidesBackButton = YES`。舊的 `fixedSpace`、`flexibleSpace` spacer 也會停在那裡，直接刪掉即可：導覽列自己會排間距。
+
 **建議的順序：先換容器、長得跟以前一樣，之後才換外觀。** 導覽列按鈕的材質用 `.automatic`，讓它跟著 Tab Bar 的 style 走：切 `.classic` 時整個 App 退回原本的外觀，先確認「換容器」沒有造成回歸；乾淨之後再開 `.floatingGlass`，這時看到的每一個問題都確定是外觀造成的。
 
 ## API 穩定性

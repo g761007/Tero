@@ -684,6 +684,8 @@ The fix is to promote the main scroll view to `.always`. **Promote only the main
 
 **Six: do not wrap a bottom sheet in a navigation container.** iOS 26 takes over the presentation of a navigation container, so the sheet's corner radius and position stop being your animator's decision — the corners become the system's and your specified height stops applying. Wrapping one just to get a title row is a bad trade; build a plain view for the title row instead.
 
+**Seven: hide the back button with `hidesBackButton`.** Under `UINavigationController`, an empty left item — `initWithTitle:nil target:nil action:nil` — was a common way to hide it. The mirror cannot tell that item from a broken one, so Debug builds stop on the empty-button assertion (see [Mirroring a `UINavigationItem`](#mirroring-a-uinavigationitem)); set `navigationItem.hidesBackButton = YES` instead. Legacy `fixedSpace` and `flexibleSpace` spacers stop there too and can simply be deleted: the bar spaces its own items.
+
 **A suggested order: swap the container first and keep the old look, then change the appearance.** Give navigation buttons the `.automatic` material so they follow the tab bar style: with `.classic` the whole app returns to its previous appearance, letting you confirm that swapping the container caused no regressions; once that is clean, turn on `.floatingGlass`, and every problem you then see is definitely an appearance problem.
 
 ## API stability

@@ -125,6 +125,23 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
                       "系統型 item 畫不出內容，必須有診斷；實際收到：\(reported)")
     }
 
+    /// `UINavigationController` 時代藏返回鍵的寫法是一顆空的 left item。它的正確改法是
+    /// `hidesBackButton`，訊息要說得出來，不能只叫人補 title 或 image。
+    func test_theEmptyItemThatUsedToHideTheBackButtonPointsToHidesBackButton() {
+        var reported: [String] = []
+        // tearDown 會還原 reportHandler，這裡不必自己收。
+        TeroDiagnostics.reportHandler = { message, _, _ in reported.append(message) }
+
+        let bar = makeBar()
+        let item = UINavigationItem(title: "Result")
+        item.leftBarButtonItem = UIBarButtonItem(title: nil, style: .plain, target: nil, action: nil)
+
+        bar.bind(to: item, backAction: {})
+
+        XCTAssertTrue(reported.contains { $0.contains("hidesBackButton") },
+                      "藏返回鍵的空 item 要指向 hidesBackButton；實際收到：\(reported)")
+    }
+
     /// 有內容的 item 不該吼。
     func test_anOrdinaryBarButtonItemReportsNothing() {
         var reported: [String] = []
