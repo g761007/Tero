@@ -125,6 +125,7 @@
 @objc public var style: TeroTabBarStyle = .classic
 @objc public var swipeSelectionMode: TeroTabSwipeSelectionMode = .disabled
 @objc public var tabBarStyle: TeroTabBarStyle
+@objc public var teroNavigationContainer: TeroNavigationContainer?
 @objc public var title: String?
 @objc public var titleColor: UIColor?
 @objc public var titleFont: UIFont?

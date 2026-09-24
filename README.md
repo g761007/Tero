@@ -342,6 +342,14 @@ let tab = TeroTab(
 
 Each tab keeps its own stack, and switching away and back does not reset it.
 
+A screen reaches its container through `teroNavigationContainer`, the counterpart of `navigationController` (which is `nil` inside a Tero hierarchy): the nearest `TeroNavigationContainer` up the `parent` chain.
+
+~~~swift
+teroNavigationContainer?.pushViewController(DetailViewController(), animated: true)
+~~~
+
+It is computed and holds nothing, and it already works inside `makeTeroNavigationChromeView()`. A screen that `setViewControllers(_:animated:)` places below the top is not a child until it is first shown, and sees `nil` until then.
+
 **Stack changes are synchronous**: `viewControllers` and `topViewController` hold the new values before the method returns, and the animation is only the picture catching up. Send another change mid-transition and the running segment settles to its own endpoint immediately while the new one starts from a clean hierarchy — nothing is dropped and nothing queues. Dropping would leave a child that never received `didMove(toParent:)`.
 
 Interactive pop is the one exception: it does not commit until the finish threshold is met, so cancelling leaves the stack untouched.
@@ -392,7 +400,7 @@ Four rules produce correct chrome:
 3. **Chrome views should be translucent.** Content scrolls underneath, and a solid fill hides that relationship. `TeroNavigationBar` uses a `UIBlurEffect` by default and only switches to solid when Reduce Transparency is on; custom chrome should do the same.
 
    On iOS 26 the container installs a `.top` `UIScrollEdgeElementContainerInteraction` (the bottom tab bar installs the symmetric `.bottom`), tracking whatever the screen returns from `teroTrackingScrollView`. Either interaction exists only while there is a scroll view to track; an idle one is removed, because it is not free — it changes colour resolution inside its container, and on the tab bar it made iOS 26's observation tracking report a feedback loop on every layout. **It does take hold, in a way that matters for opaque chrome**: inside that container, dynamic system colours resolve to their bar variants — on the iOS 26 simulator `systemBackground` renders as (245, 245, 245) rather than white, while fixed colours such as `.white` are untouched. A chrome that must match the content exactly, like an Instagram-style white header, should turn the effect off with `container.isScrollEdgeEffectEnabled = false` or use a fixed colour. Whether the soft edge itself shows on a translucent chrome still needs a device check; do any edge treatment you depend on in the chrome view yourself.
-4. **A chrome view must not hold the container strongly.** The container holds the screen, the screen holds the chrome view, and a strong reference back to the container closes the cycle. Use `weak var` to push or pop from chrome.
+4. **A chrome view must not hold the container strongly.** The container holds the screen, the screen holds the chrome view, and a strong reference back to the container closes the cycle. To push or pop from chrome, capture `[weak self]` and go through `teroNavigationContainer`, which holds nothing.
 
 **Chrome takes part in the transition.** During an animated push or pop both screens' chrome sit in the container: the outgoing one fades out, the incoming one fades in, and the chrome height interpolates between the two declared heights, all in the same animator as the content. During an interactive pop they follow the finger, and a cancelled gesture puts the outgoing chrome back. The reserved inset still switches at commit, so the incoming screen lays out with its own height from the first frame.
 
@@ -497,7 +505,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
     func makeTeroNavigationChromeView() -> UIView {
         let bar = TeroNavigationBar(frame: .zero)
         bar.bind(to: navigationItem, backAction: { [weak self] in
-            self?.container?.popViewController(animated: true)   // weak: chrome must not hold the container
+            self?.teroNavigationContainer?.popViewController(animated: true)   // weak: the chrome belongs to this screen
         })
         return bar
     }
@@ -648,7 +656,7 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 ### Migrating from `UINavigationController`
 
-`TeroNavigationContainer` is **not** a subclass of `UINavigationController`, so `self.navigationController` is `nil` inside a Tero hierarchy. Tero **provides no compatibility layer**; the reasoning is below.
+`TeroNavigationContainer` is **not** a subclass of `UINavigationController`, so `self.navigationController` is `nil` inside a Tero hierarchy; `teroNavigationContainer` is its counterpart. Tero **provides no compatibility layer**; the reasoning is below.
 
 The common move is a shim on the consumer side that casts the container to `UINavigationController *` and fills in the missing members with a category. That road has two pits, both of them stepped in for real:
 

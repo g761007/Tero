@@ -342,6 +342,14 @@ let tab = TeroTab(
 
 每個 Tab 各自保有自己的 stack，切走再切回來不會被重置。
 
+頁面透過 `teroNavigationContainer` 找到自己的容器。它是 `navigationController` 的對應物（後者在 Tero 的階層裡是 `nil`）：沿 `parent` 往上找到的最近一個 `TeroNavigationContainer`。
+
+~~~swift
+teroNavigationContainer?.pushViewController(DetailViewController(), animated: true)
+~~~
+
+它是計算屬性，不持有任何東西，在 `makeTeroNavigationChromeView()` 裡就已經找得到。`setViewControllers(_:animated:)` 放在下面的頁面，第一次顯示之前還不是 child，在那之前拿到的是 `nil`。
+
 **Stack 的變更是同步的**：方法 return 之前 `viewControllers` 與 `topViewController` 已經是新值，動畫只是追上來的畫面。轉場進行中再送一次變更，正在跑的那一段會立刻結算到自己的終點，新的一段從乾淨的階層起跑——不丟棄、不排隊。丟棄會留下沒收到 `didMove(toParent:)` 的 child。
 
 互動式返回是唯一的例外：它在 finish 判定成立之前不提交，所以取消之後 stack 一個字都沒變過。
@@ -392,7 +400,7 @@ extension FeedViewController: TeroNavigationChromeProviding {
 3. **chrome view 建議半透明。** 內容從它底下捲過去，實色底會把那層關係蓋掉。`TeroNavigationBar` 預設是 `UIBlurEffect`，「降低透明度」開啟時才換成實色；自訂 chrome 照抄這個做法即可。
 
    iOS 26 上容器會裝一個 `.top` 的 `UIScrollEdgeElementContainerInteraction`（底部 Tab Bar 裝對稱的 `.bottom`），追蹤對象取自這一頁的 `teroTrackingScrollView`。兩顆互動都只在有 scroll view 可追蹤時才存在，閒著的會被拆掉——它不是免費的：會改寫容器裡動態色的解析，在 Tab Bar 上還會讓 iOS 26 的 observation tracking 每次版面都回報回饋迴圈。**它確實會生效，而且生效的方式對不透明的 chrome 有影響**：在那個容器裡，動態系統色會解析成 bar 的變體——iOS 26 模擬器上 `systemBackground` 畫出來是 (245, 245, 245) 而不是白，固定色（`.white`）不受影響。要與內容同色的 chrome（Instagram 那種白底 header）請用 `container.isScrollEdgeEffectEnabled = false` 關掉，或改用固定色。半透明 chrome 上的邊緣效果本身還需要真機確認；需要依賴的邊緣處理請自己在 chrome view 上做。
-4. **chrome view 不得強引用容器。** 容器持有頁面，頁面持有 chrome view，chrome view 再強引用容器就是一個循環。要在 chrome 上做 push／pop，用 `weak var`。
+4. **chrome view 不得強引用容器。** 容器持有頁面，頁面持有 chrome view，chrome view 再強引用容器就是一個循環。要在 chrome 上做 push／pop，在 `[weak self]` 的 closure 裡走 `teroNavigationContainer`，它不持有任何東西。
 
 **chrome 參與轉場。** 有動畫的 push／pop 期間兩頁的 chrome 都在容器裡：離開的淡出、進來的淡入，chrome 的高度在兩頁宣告的帶高之間內插，與內容走同一個 animator。互動式返回時跟著手指，取消的話離開的那一個回來。reserved inset 仍在 commit 那一刻就切換，所以進來的頁面從第一幀就用自己的帶高排版。
 
@@ -497,7 +505,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
     func makeTeroNavigationChromeView() -> UIView {
         let bar = TeroNavigationBar(frame: .zero)
         bar.bind(to: navigationItem, backAction: { [weak self] in
-            self?.container?.popViewController(animated: true)   // weak：chrome 不得強引用容器
+            self?.teroNavigationContainer?.popViewController(animated: true)   // weak：chrome 屬於這一頁
         })
         return bar
     }
@@ -648,7 +656,7 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 ### 從 `UINavigationController` 遷移
 
-`TeroNavigationContainer` **不是** `UINavigationController` 的子類，所以 `self.navigationController` 在 Tero 的階層裡是 `nil`。Tero **不提供相容層**，理由見下。
+`TeroNavigationContainer` **不是** `UINavigationController` 的子類，所以 `self.navigationController` 在 Tero 的階層裡是 `nil`；對應物是 `teroNavigationContainer`。Tero **不提供相容層**，理由見下。
 
 常見的做法是在 consumer 端補一層 shim，把容器硬轉成 `UINavigationController *` 再用 category 補齊成員。這條路有兩個坑，都是實際踩過的：
 

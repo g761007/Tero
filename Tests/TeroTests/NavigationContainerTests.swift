@@ -2,6 +2,16 @@ import XCTest
 import UIKit
 @testable import Tero
 
+/// 在建立 chrome 的那一刻記下它找到的容器。
+private final class ContainerLookupPage: UIViewController, TeroNavigationChromeProviding {
+    private(set) weak var containerWhileMakingChrome: TeroNavigationContainer?
+    func makeTeroNavigationChromeView() -> UIView {
+        containerWhileMakingChrome = teroNavigationContainer
+        return UIView()
+    }
+    var teroNavigationChromeHeight: CGFloat { 44 }
+}
+
 /// Phase 1：stack、containment、無動畫的 push／pop／set。
 ///
 /// 測試名就是規格，與 `SetTabsTests` 同一種寫法。轉場、事件面與 interactive pop
@@ -267,6 +277,52 @@ final class NavigationContainerTests: TeroTabBarControllerTestCase {
         container.loadViewIfNeeded()
 
         XCTAssertIdentical(detail.view.superview, container.view)
+    }
+
+    // MARK: - 從子頁找到容器
+
+    func test_everyPageInTheStackFindsItsContainer() {
+        let root = page("root")
+        let container = TeroNavigationContainer(rootViewController: root)
+        let detail = page("detail")
+        container.pushViewController(detail, animated: false)
+
+        XCTAssertIdentical(root.teroNavigationContainer, container)
+        XCTAssertIdentical(detail.teroNavigationContainer, container)
+    }
+
+    func test_aChildOfAPageFindsThePagesContainer() {
+        let root = page("root")
+        let container = TeroNavigationContainer(rootViewController: root)
+        let nested = UIViewController()
+        root.addChild(nested)
+        nested.didMove(toParent: root)
+
+        XCTAssertIdentical(nested.teroNavigationContainer, container)
+    }
+
+    func test_aPageOutsideAnyContainerFindsNone() {
+        XCTAssertNil(page("alone").teroNavigationContainer)
+    }
+
+    /// 與 `navigationController` 相同：不含自己，找的是上一層。
+    func test_aContainerFindsTheOneAboveItRatherThanItself() {
+        let outer = TeroNavigationContainer(rootViewController: page("outer"))
+        let inner = TeroNavigationContainer(rootViewController: page("inner"))
+        outer.pushViewController(inner, animated: false)
+
+        XCTAssertIdentical(inner.teroNavigationContainer, outer)
+        XCTAssertNil(outer.teroNavigationContainer)
+    }
+
+    /// chrome 上的動作最常在這裡取容器：容器建立 chrome 之前就把頁面收成 child。
+    func test_aPageFindsItsContainerWhileMakingItsChrome() {
+        let container = TeroNavigationContainer(rootViewController: page("root"))
+        let detail = ContainerLookupPage()
+
+        container.pushViewController(detail, animated: false)
+
+        XCTAssertIdentical(detail.containerWhileMakingChrome, container)
     }
 
     // MARK: - 轉發

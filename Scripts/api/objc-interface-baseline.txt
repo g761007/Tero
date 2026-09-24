@@ -212,6 +212,7 @@
   TeroTabMoreItem.selectedImage
   TeroTabMoreItem.title
   TeroTabVisibilityProviding.preferredTeroTabVisibilityPolicy
+  UIViewController.teroNavigationContainer
 class TeroNavigationBar
 class TeroNavigationButton
 class TeroNavigationContainer

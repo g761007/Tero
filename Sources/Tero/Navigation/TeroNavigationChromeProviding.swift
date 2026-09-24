@@ -41,7 +41,8 @@ import UIKit
     ///
     /// **chrome view 不得強引用容器。** 容器持有畫面、畫面持有這個 view，再由它強引用
     /// 容器就是一個循環——`UIAction { _ in container.pop... }` 這種最自然的寫法會把整個
-    /// stack 洩到 App 結束。要在 chrome 上做 push／pop，用 `weak var container`。
+    /// stack 洩到 App 結束。要在 chrome 上做 push／pop，在 `[weak self]` 的 closure 裡走
+    /// `teroNavigationContainer`，它是計算屬性，不持有任何東西。
     func makeTeroNavigationChromeView() -> UIView
 
     /// 完全展開時的高度。

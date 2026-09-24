@@ -35,7 +35,11 @@ for m in re.finditer(r'typedef SWIFT_ENUM\w*\([^,]+,\s*(Tero\w+)', header):
     lines.append(f"enum {m.group(1)}")
 # 前向宣告（@protocol Foo;）沒有 @end，若讓它參與比對，非貪婪的 (.*?) 會一路
 # 吃到下一個型別的 @end，把那個型別的成員全部掛到前向宣告的名字底下。
-for block in re.finditer(r'^@(?:interface|protocol) (Tero\w+)(?![^\n]*;[ \t]*$)[^\n]*\n(.*?)^@end', header, re.M | re.S):
+#
+# Tero 對 UIKit 型別的 extension 會輸出成那個型別的 category
+# （`@interface UIViewController (SWIFT_EXTENSION(模組))`）。名字不是 Tero 開頭，
+# 不另外收的話，這類公開 API 加了或拿掉，基準都看不見。
+for block in re.finditer(r'^@(?:interface|protocol) (Tero\w+|\w+(?= \(SWIFT_EXTENSION\())(?![^\n]*;[ \t]*$)[^\n]*\n(.*?)^@end', header, re.M | re.S):
     name, body = block.group(1), block.group(2)
     # 記完整 selector：只記第一段的話，setTabs:selectedIdentifier:animated: 與
     # setTabs: 無從區分，而改簽章正是這個守門要擋的事。

@@ -1031,6 +1031,32 @@ public final class TeroNavigationContainer: UIViewController {
     }
 }
 
+// MARK: - 從子頁找到容器
+
+extension UIViewController {
+
+    /// 最近的上層 `TeroNavigationContainer`；不在任何容器裡時為 nil。
+    ///
+    /// `TeroNavigationContainer` 不是 `UINavigationController`，所以 `navigationController` 在
+    /// Tero 的階層裡是 nil，這是它的對應物：沿 `parent` 往上找，不含自己，也不走 presenting，
+    /// 與 `navigationController` 相同。
+    ///
+    /// 在 `makeTeroNavigationChromeView()` 裡已經找得到：容器建立 chrome 之前就把頁面收成 child。
+    /// 它是計算屬性，不持有任何東西，所以 chrome 上的動作寫成
+    /// `self?.teroNavigationContainer?.popViewController(animated: true)` 不會形成循環。
+    ///
+    /// `setViewControllers(_:animated:)` 放在下面、還沒顯示過的頁面還不是 child，
+    /// 第一次被顯示之前對它們回 nil。
+    @objc public var teroNavigationContainer: TeroNavigationContainer? {
+        var ancestor = parent
+        while let viewController = ancestor {
+            if let container = viewController as? TeroNavigationContainer { return container }
+            ancestor = viewController.parent
+        }
+        return nil
+    }
+}
+
 // MARK: - 對上層容器的導管
 //
 // 容器自己不表態，只把 top 的宣告原封傳上去（B20）。這讓 Tab Bar 不必認得
