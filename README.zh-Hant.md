@@ -638,6 +638,28 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **不支援自訂轉場。** 轉場的樣式（推拉與 parallax）是固定的，只有 `transitionDuration` 可調。自訂轉場協定不在 2.0 的範圍內。
 
+沒有它，仍然做得到兩種效果；兩者都在 iOS 26.5 模擬器上驗證過。
+
+- **淡入淡出。** 把無動畫的 stack 變更包在 view transition 裡：
+
+  ~~~swift
+  UIView.transition(with: container.view, duration: 0.3, options: .transitionCrossDissolve) {
+      container.pushViewController(detail, animated: false)
+  }
+  ~~~
+
+  這之所以成立，是因為無動畫的變更在方法 return 之前就完成，連 view 也換好了，所以換頁發生在 block 之內。內容與兩頁的 chrome 都會淡入淡出。生命週期方法與 delegate 收到的是 `animated: false`。返回（包含邊緣手勢）仍然是推拉；要讓返回鍵的 pop 也淡入淡出，就用同樣的方式包 `popViewController(animated: false)`。新頁若把 Tab Bar 藏起來或叫出來，Tab Bar 不會淡入淡出，而是用整段轉場的時間滑動。
+
+- **下拉選單。** 以 `.overCurrentContext` 呈現，並讓容器當 presentation context：
+
+  ~~~swift
+  container.definesPresentationContext = true
+  menu.modalPresentationStyle = .overCurrentContext
+  present(menu, animated: true)
+  ~~~
+
+  頁面的內容排在容器的 chrome 之下，所以以頁面為範圍的選單——由頁面自己設 `definesPresentationContext`——也會落在 chrome 底下，在 sheet 裡也一樣。以容器為範圍，選單才會蓋過 chrome。
+
 **More 沒有擴充點。** `TeroTabMorePresentationStyle` 只有內建的幾種呈現方式，不接受自訂容器。
 
 **iOS 26 以下沒有 FloatingGlass。** 實際樣式一律降級為 Classic，因此在這些版本上也沒有捲動最小化。**降級的目標是「隱藏」，不是「不動」**——Classic 之下 `.minimizeOnScrollDown` 會被換成 `.hideOnScrollDown`。要讓舊系統上完全不反應，請在該頁明確回傳 `.none`。

@@ -638,6 +638,28 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **Custom transitions are not supported.** The transition style — push, pull and parallax — is fixed, and only `transitionDuration` is adjustable. A custom transition protocol is out of scope for 2.0.
 
+Two effects are still within reach without one; both were checked on the iOS 26.5 simulator.
+
+- **A cross-fade.** Wrap a stack change without animation in a view transition:
+
+  ~~~swift
+  UIView.transition(with: container.view, duration: 0.3, options: .transitionCrossDissolve) {
+      container.pushViewController(detail, animated: false)
+  }
+  ~~~
+
+  It works because a change without animation completes before the method returns, views included, so it happens inside the block. The content and both screens' chrome fade. The lifecycle calls and the delegate report `animated: false`. Going back is still the push-and-pull slide, edge gesture included; wrap `popViewController(animated: false)` the same way to fade a back button's pop. A tab bar that the new screen hides or shows does not fade: it slides for the length of the transition.
+
+- **A drop-down menu.** Present it over the current context, with the container as that context:
+
+  ~~~swift
+  container.definesPresentationContext = true
+  menu.modalPresentationStyle = .overCurrentContext
+  present(menu, animated: true)
+  ~~~
+
+  A screen's content sits beneath the container's chrome, so a menu scoped to the screen — the screen setting `definesPresentationContext` itself — ends up under the chrome too, in a sheet or not. Scoped to the container, it covers the chrome.
+
 **More has no extension point.** `TeroTabMorePresentationStyle` offers only its built-in presentations and does not take a custom container.
 
 **There is no FloatingGlass below iOS 26.** The effective style always falls back to Classic, so there is no scroll minimisation on those versions either. **The fallback target is "hide", not "do nothing"** — under Classic, `.minimizeOnScrollDown` becomes `.hideOnScrollDown`. To get no reaction at all on older systems, return `.none` from that screen explicitly.

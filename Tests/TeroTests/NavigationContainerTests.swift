@@ -279,6 +279,20 @@ final class NavigationContainerTests: TeroTabBarControllerTestCase {
         XCTAssertIdentical(detail.view.superview, container.view)
     }
 
+    /// 無動畫的換頁在 return 之前就完成，連畫面也換好了。README 的淡入淡出作法把 push 包在
+    /// `UIView.transition(with:)` 的 block 裡，靠的就是這一點：換頁要落在 block 之內。
+    func test_aPushWithoutAnimationSwapsTheViewsBeforeItReturns() {
+        let root = page("root")
+        let container = TeroNavigationContainer(rootViewController: root)
+        present(container)
+        let detail = page("detail")
+
+        container.pushViewController(detail, animated: false)
+
+        XCTAssertIdentical(detail.viewIfLoaded?.superview, container.view)
+        XCTAssertNil(root.viewIfLoaded?.superview, "離開的那一頁已經移出容器")
+    }
+
     // MARK: - 從子頁找到容器
 
     func test_everyPageInTheStackFindsItsContainer() {
