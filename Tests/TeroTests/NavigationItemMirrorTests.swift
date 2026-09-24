@@ -125,6 +125,23 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
                       "系統型 item 畫不出內容，必須有診斷；實際收到：\(reported)")
     }
 
+    /// `UINavigationController` 時代藏返回鍵的寫法是一顆空的 left item。它的正確改法是
+    /// `hidesBackButton`，訊息要說得出來，不能只叫人補 title 或 image。
+    func test_theEmptyItemThatUsedToHideTheBackButtonPointsToHidesBackButton() {
+        var reported: [String] = []
+        // tearDown 會還原 reportHandler，這裡不必自己收。
+        TeroDiagnostics.reportHandler = { message, _, _ in reported.append(message) }
+
+        let bar = makeBar()
+        let item = UINavigationItem(title: "Result")
+        item.leftBarButtonItem = UIBarButtonItem(title: nil, style: .plain, target: nil, action: nil)
+
+        bar.bind(to: item, backAction: {})
+
+        XCTAssertTrue(reported.contains { $0.contains("hidesBackButton") },
+                      "藏返回鍵的空 item 要指向 hidesBackButton；實際收到：\(reported)")
+    }
+
     /// 有內容的 item 不該吼。
     func test_anOrdinaryBarButtonItemReportsNothing() {
         var reported: [String] = []
@@ -410,6 +427,89 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
 
         XCTAssertEqual(button.intrinsicContentSize.width,
                        reference.intrinsicContentSize.width, accuracy: 0.5)
+    }
+
+    // MARK: - 圖片著色
+
+    private func solidImage(_ color: UIColor) -> UIImage {
+        UIGraphicsImageRenderer(size: CGSize(width: 22, height: 22)).image { context in
+            color.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 22, height: 22))
+        }
+    }
+
+    /// 把 view 的 layer 畫下來，數純紅與純藍的像素。
+    ///
+    /// 走 `layer.render(in:)` 而不是 `drawHierarchy`：測試的視窗沒有 window scene，
+    /// 不會真的上螢幕，`drawHierarchy` 畫不出東西。這條路徑量得到 tint——
+    /// `UIImageView` 的 template 圖會畫成 tint 色。
+    private func colourCounts(of view: UIView) -> (red: Int, blue: Int) {
+        view.layoutIfNeeded()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(bounds: view.bounds, format: format).image { context in
+            view.layer.render(in: context.cgContext)
+        }
+        guard let cgImage = image.cgImage else { return (0, 0) }
+        let width = cgImage.width, height = cgImage.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        var red = 0, blue = 0
+        pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(
+                data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let bytes = buffer.bindMemory(to: UInt8.self)
+            for index in stride(from: 0, to: bytes.count, by: 4) {
+                let r = Int(bytes[index]), g = Int(bytes[index + 1]), b = Int(bytes[index + 2])
+                if r > 180 && g < 90 && b < 90 { red += 1 }
+                if b > 180 && r < 90 && g < 90 { blue += 1 }
+            }
+        }
+        return (red, blue)
+    }
+
+    /// 不放進視窗：視窗的安全區會把 Primary 列推到 bar 的 44pt 邊界之外，畫下來是空的。
+    private func barShowing(_ image: UIImage) -> TeroNavigationBar {
+        let bar = TeroNavigationBar(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
+        bar.defaultButtonMaterial = .plain
+        bar.showsBackdrop = false
+        bar.tintColor = .blue
+        let item = UINavigationItem(title: "")
+        item.rightBarButtonItem = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+        bar.bind(to: item, backAction: nil)
+        return bar
+    }
+
+    /// `UINavigationBar` 把 `.automatic` 的圖當 template 畫、吃 bar 的 tint；`.custom` 型的
+    /// `UIButton` 則照原色畫。實測（iOS 26.5）原生畫成單色，鏡射先前畫成原色。
+    ///
+    /// 只用 SF Symbol 的頁面看不出差異——symbol 本來就吃 tint；中的是 asset catalog 裡
+    /// Render As 保持 Default 的 PNG。
+    func test_anAutomaticImageTakesTheTintLikeInANavigationBar() {
+        let counts = colourCounts(of: barShowing(solidImage(.red)))
+
+        XCTAssertEqual(counts.red, 0, "不該照原色畫")
+        XCTAssertGreaterThan(counts.blue, 0, "要畫成 bar 的 tint")
+    }
+
+    /// 要原色就用 `.alwaysOriginal`，與 UIKit 相同。
+    func test_anAlwaysOriginalImageKeepsItsColours() {
+        let counts = colourCounts(of: barShowing(solidImage(.red).withRenderingMode(.alwaysOriginal)))
+
+        XCTAssertGreaterThan(counts.red, 0)
+        XCTAssertEqual(counts.blue, 0)
+    }
+
+    /// symbol 不轉：它本來就吃 tint，轉成 template 反而會吃掉 multicolor 之類的設定。
+    func test_aSymbolImageIsHandedOverAsIs() throws {
+        let symbol = try XCTUnwrap(UIImage(systemName: "plus"))
+        let bar = barShowing(symbol)
+
+        let button = try XCTUnwrap(bar.trailingItems.first as? UIButton)
+        XCTAssertIdentical(button.image(for: .normal), symbol)
     }
 
     // MARK: - 與 UIKit 對得上的排列順序

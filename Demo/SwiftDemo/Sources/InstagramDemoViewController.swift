@@ -67,9 +67,7 @@ final class InstagramDemoViewController: UIViewController {
 
     private func installTabs() {
         func container(_ root: InstagramPage) -> TeroNavigationContainer {
-            let container = TeroNavigationContainer(rootViewController: root)
-            root.container = container
-            return container
+            TeroNavigationContainer(rootViewController: root)
         }
         let home = InstagramHomePage()
         let homeContainer = container(home)
@@ -202,11 +200,11 @@ final class AvatarTabProvider: NSObject, TeroTabInteractiveContentProvider {
 
 /// IG 的每一頁：一張清單，交出自己的 scroll view，自己提供 chrome。
 class InstagramPage: UIViewController, TeroScrollProviding, TeroNavigationChromeProviding, UITableViewDataSource {
-    weak var container: TeroNavigationContainer?
     let tableView = UITableView()
     var rows: [String] { (0..<40).map { "\(pageName) · \($0)" } }
     var pageName: String { "Page" }
-    var hasBack: Bool { container?.rootViewController !== self }
+    /// 這一頁的 chrome 是自己畫的，返回鍵要自己決定——鏡射的返回鍵才由容器判斷。
+    var hasBack: Bool { teroNavigationContainer?.rootViewController !== self }
 
     var teroTrackingScrollView: UIScrollView? { tableView }
 
@@ -230,10 +228,10 @@ class InstagramPage: UIViewController, TeroScrollProviding, TeroNavigationChrome
         tableView.setContentOffset(CGPoint(x: 0, y: -tableView.adjustedContentInset.top), animated: true)
     }
 
-    /// 返回鍵：頁面弱引用容器，chrome 不反向強引用（ADR-0013）。
+    /// 返回鍵：經 `teroNavigationContainer` 找容器，不持有它，chrome 因此不反向強引用（ADR-0013）。
     func makeBackButton() -> TeroNavigationButton {
         let back = TeroNavigationButton(image: UIImage(systemName: "chevron.backward"), material: .automatic)
-        back.addAction(UIAction { [weak self] _ in self?.container?.popViewController(animated: true) },
+        back.addAction(UIAction { [weak self] _ in self?.teroNavigationContainer?.popViewController(animated: true) },
                        for: .touchUpInside)
         return back
     }
@@ -286,10 +284,8 @@ final class InstagramHomePage: InstagramPage {
         messenger.tintColor = .label
         messenger.accessibilityIdentifier = "ig.home.messages"
         messenger.addAction(UIAction { [weak self] _ in
-            guard let self, let container = self.container else { return }
-            let inbox = InstagramDetailPage(name: "Messages")
-            inbox.container = container
-            container.pushViewController(inbox, animated: true)
+            guard let self, let container = self.teroNavigationContainer else { return }
+            container.pushViewController(InstagramDetailPage(name: "Messages"), animated: true)
         }, for: .touchUpInside)
         bar.trailingItems = [heart, messenger]
 

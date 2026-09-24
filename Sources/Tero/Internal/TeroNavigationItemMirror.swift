@@ -56,7 +56,9 @@ internal final class TeroNavigationItemMirror: NSObject {
         let rightItems = item.rightBarButtonItems ?? []
 
         var leading: [UIView] = []
-        if let back = resolvedBackButton(leftItems: leftItems) { leading.append(back) }
+        if let back = resolvedBackButton(leftItems: leftItems, canNavigateBack: bar.canNavigateBack) {
+            leading.append(back)
+        }
         leading.append(contentsOf: leftItems.map(view(for:)))
         bar.leadingItems = leading
         // 反轉才對得上 UIKit：`rightBarButtonItems` 的第 0 顆貼著右緣、往左排，
@@ -71,10 +73,10 @@ internal final class TeroNavigationItemMirror: NSObject {
         observeButtons(leftItems + rightItems)
     }
 
-    /// 合成的返回鍵：有動作可接、頁面沒有藏返回鍵、而且沒有自己的 left items
-    /// （除非它說 left items 是補在返回鍵旁邊的）。
-    private func resolvedBackButton(leftItems: [UIBarButtonItem]) -> TeroNavigationButton? {
-        guard backAction != nil, !item.hidesBackButton,
+    /// 合成的返回鍵：有動作可接、有上一頁可以回去、頁面沒有藏返回鍵、而且沒有自己的
+    /// left items（除非它說 left items 是補在返回鍵旁邊的）。
+    private func resolvedBackButton(leftItems: [UIBarButtonItem], canNavigateBack: Bool) -> TeroNavigationButton? {
+        guard backAction != nil, canNavigateBack, !item.hidesBackButton,
               leftItems.isEmpty || item.leftItemsSupplementBackButton else {
             backButton = nil
             return nil
@@ -110,10 +112,15 @@ internal final class TeroNavigationItemMirror: NSObject {
             // `UIBarButtonItem(barButtonSystemItem:)` 正是這種：實測 done／cancel／add
             // 的 title、image、customView **全部是 nil**。而 `systemItem` 沒有公開的
             // getter，所以 Tero 無法把它對應回 SF Symbol 或文字——能做的只有講出來。
+            //
+            // 舊專案裡同樣三者皆 nil 的還有兩種，改法各不相同：藏返回鍵的空 left item，
+            // 與 `fixedSpace`／`flexibleSpace` 的 spacer。鏡射分不出這三種，所以訊息全部列出。
             if barItem.image == nil, barItem.title?.isEmpty ?? true {
                 TeroDiagnostics.report(
-                    "UIBarButtonItem 沒有 title、image 或 customView，鏡射只能畫出空白按鈕。"
-                    + "系統型的 item（barButtonSystemItem:）就是這種——請改用明確的 title 或 image。"
+                    "UIBarButtonItem 沒有 title、image 或 customView，鏡射只能畫出空白按鈕。常見的三種來源："
+                    + "系統型的 item（barButtonSystemItem:）請改用明確的 title 或 image；"
+                    + "用來藏返回鍵的空 item（initWithTitle:nil target:nil action:nil）請改成 "
+                    + "navigationItem.hidesBackButton = YES；fixedSpace／flexibleSpace 的 spacer 請直接刪掉。"
                 )
             }
             // 材質一律建成 `.automatic`，由 `TeroNavigationBar` 在 `rebuild` 時套上它的
@@ -210,8 +217,8 @@ internal final class TeroNavigationItemMirror: NSObject {
         button.menu = barItem.menu
         button.showsMenuAsPrimaryAction = (barItem.menu != nil && barItem.primaryAction == nil
                                            && barItem.action == nil)
-        if barItem.image != nil {
-            button.setImage(barItem.image, for: .normal)
+        if let image = barItem.image {
+            button.setImage(barImage(image), for: .normal)
         } else {
             button.setTitle(barItem.title, for: .normal)
             // 比照 UIKit：Plain 是 17pt regular、Done 是 17pt semibold。接入筆記記過寫死
@@ -222,6 +229,17 @@ internal final class TeroNavigationItemMirror: NSObject {
             applyTitleTextAttributes(of: barItem, to: button)
         }
         button.accessibilityLabel = barItem.accessibilityLabel ?? barItem.title
+    }
+
+    /// `UINavigationBar` 把 `.automatic` 的圖當 template 畫、吃 bar 的 tint；`.custom` 型的
+    /// `UIButton` 則照原色畫。鏡射對齊前者，與反轉右側按鈕、釘住 `customView` 尺寸同一個
+    /// 道理：對齊 UIKit 是相容層的責任。
+    ///
+    /// symbol 不轉：它本來就吃 tint，轉成 template 反而會吃掉 multicolor 之類的設定。
+    /// `.alwaysOriginal` 不轉：要原色就這樣寫，與 UIKit 相同。
+    private static func barImage(_ image: UIImage) -> UIImage {
+        guard image.renderingMode == .automatic, !image.isSymbolImage else { return image }
+        return image.withRenderingMode(.alwaysTemplate)
     }
 
     private func prune(keeping items: [UIBarButtonItem]) {

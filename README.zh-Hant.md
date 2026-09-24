@@ -43,7 +43,7 @@
 
 ~~~swift
 dependencies: [
-    .package(url: "https://github.com/g761007/Tero.git", from: "2.0.0")
+    .package(url: "https://github.com/g761007/Tero.git", from: "2.1.0")
 ]
 ~~~
 
@@ -54,7 +54,7 @@ platform :ios, '15.0'
 use_frameworks! :linkage => :static
 
 target 'YourApp' do
-  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.0.0'
+  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.0'
 end
 ~~~
 
@@ -342,6 +342,14 @@ let tab = TeroTab(
 
 每個 Tab 各自保有自己的 stack，切走再切回來不會被重置。
 
+頁面透過 `teroNavigationContainer` 找到自己的容器。它是 `navigationController` 的對應物（後者在 Tero 的階層裡是 `nil`）：沿 `parent` 往上找到的最近一個 `TeroNavigationContainer`。
+
+~~~swift
+teroNavigationContainer?.pushViewController(DetailViewController(), animated: true)
+~~~
+
+它是計算屬性，不持有任何東西，在 `makeTeroNavigationChromeView()` 裡就已經找得到。`setViewControllers(_:animated:)` 放在下面的頁面，第一次顯示之前還不是 child，在那之前拿到的是 `nil`。
+
 **Stack 的變更是同步的**：方法 return 之前 `viewControllers` 與 `topViewController` 已經是新值，動畫只是追上來的畫面。轉場進行中再送一次變更，正在跑的那一段會立刻結算到自己的終點，新的一段從乾淨的階層起跑——不丟棄、不排隊。丟棄會留下沒收到 `didMove(toParent:)` 的 child。
 
 互動式返回是唯一的例外：它在 finish 判定成立之前不提交，所以取消之後 stack 一個字都沒變過。
@@ -392,7 +400,7 @@ extension FeedViewController: TeroNavigationChromeProviding {
 3. **chrome view 建議半透明。** 內容從它底下捲過去，實色底會把那層關係蓋掉。`TeroNavigationBar` 預設是 `UIBlurEffect`，「降低透明度」開啟時才換成實色；自訂 chrome 照抄這個做法即可。
 
    iOS 26 上容器會裝一個 `.top` 的 `UIScrollEdgeElementContainerInteraction`（底部 Tab Bar 裝對稱的 `.bottom`），追蹤對象取自這一頁的 `teroTrackingScrollView`。兩顆互動都只在有 scroll view 可追蹤時才存在，閒著的會被拆掉——它不是免費的：會改寫容器裡動態色的解析，在 Tab Bar 上還會讓 iOS 26 的 observation tracking 每次版面都回報回饋迴圈。**它確實會生效，而且生效的方式對不透明的 chrome 有影響**：在那個容器裡，動態系統色會解析成 bar 的變體——iOS 26 模擬器上 `systemBackground` 畫出來是 (245, 245, 245) 而不是白，固定色（`.white`）不受影響。要與內容同色的 chrome（Instagram 那種白底 header）請用 `container.isScrollEdgeEffectEnabled = false` 關掉，或改用固定色。半透明 chrome 上的邊緣效果本身還需要真機確認；需要依賴的邊緣處理請自己在 chrome view 上做。
-4. **chrome view 不得強引用容器。** 容器持有頁面，頁面持有 chrome view，chrome view 再強引用容器就是一個循環。要在 chrome 上做 push／pop，用 `weak var`。
+4. **chrome view 不得強引用容器。** 容器持有頁面，頁面持有 chrome view，chrome view 再強引用容器就是一個循環。要在 chrome 上做 push／pop，在 `[weak self]` 的 closure 裡走 `teroNavigationContainer`，它不持有任何東西。
 
 **chrome 參與轉場。** 有動畫的 push／pop 期間兩頁的 chrome 都在容器裡：離開的淡出、進來的淡入，chrome 的高度在兩頁宣告的帶高之間內插，與內容走同一個 animator。互動式返回時跟著手指，取消的話離開的那一個回來。reserved inset 仍在 commit 那一刻就切換，所以進來的頁面從第一幀就用自己的帶高排版。
 
@@ -497,7 +505,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
     func makeTeroNavigationChromeView() -> UIView {
         let bar = TeroNavigationBar(frame: .zero)
         bar.bind(to: navigationItem, backAction: { [weak self] in
-            self?.container?.popViewController(animated: true)   // weak：chrome 不得強引用容器
+            self?.teroNavigationContainer?.popViewController(animated: true)   // weak：chrome 屬於這一頁
         })
         return bar
     }
@@ -505,7 +513,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
 }
 ~~~
 
-鏡射的有 `title`、`titleView`、`leftBarButtonItems`、`rightBarButtonItems`、`hidesBackButton`、`leftItemsSupplementBackButton`，之後每顆 `UIBarButtonItem` 的 `isEnabled`、`title`、`image`、`tintColor` 也持續盯著，執行期換按鈕的頁面照樣能用。`UIBarButtonItem` 變成套用導覽列 `defaultButtonMaterial` 的 `TeroNavigationButton`，字型比照 UIKit——`.plain` 17pt regular、`.done` 17pt semibold——並保留 target-action、`primaryAction` 與 `menu`；`customView` 直接沿用。文字按鈕還會採用 item 自己的 `titleTextAttributes`，而且優先於導覽列的預設：normal 與 disabled 的顏色贏過 `buttonTitleColor`，normal 的字型取代 17pt 的預設。傳了 `backAction`、item 沒有藏返回鍵、也沒有自己的 left items（或它們是補在返回鍵旁的）時合成一顆返回鍵，判準與 UIKit 相同。傳 `nil` 解除。Objective-C 是 `-bindToNavigationItem:backAction:`。
+鏡射的有 `title`、`titleView`、`leftBarButtonItems`、`rightBarButtonItems`、`hidesBackButton`、`leftItemsSupplementBackButton`，之後每顆 `UIBarButtonItem` 的 `isEnabled`、`title`、`image`、`tintColor` 也持續盯著，執行期換按鈕的頁面照樣能用。`UIBarButtonItem` 變成套用導覽列 `defaultButtonMaterial` 的 `TeroNavigationButton`，字型比照 UIKit——`.plain` 17pt regular、`.done` 17pt semibold——並保留 target-action、`primaryAction` 與 `menu`；`customView` 直接沿用。rendering mode 為 `.automatic` 的圖會當成 template 畫、吃導覽列的 tint，與 `UINavigationBar` 相同；要原色請用 `.alwaysOriginal`。自己建的 `TeroNavigationButton` 就是 `UIButton`，`.automatic` 的圖會照原色畫，要吃 tint 請給 template 圖或 SF Symbol。文字按鈕還會採用 item 自己的 `titleTextAttributes`，而且優先於導覽列的預設：normal 與 disabled 的顏色贏過 `buttonTitleColor`，normal 的字型取代 17pt 的預設。傳了 `backAction`、有上一頁可以回去、item 沒有藏返回鍵、也沒有自己的 left items（或它們是補在返回鍵旁的）時合成一顆返回鍵，判準與 UIKit 相同。在 `TeroNavigationContainer` 裡，「有沒有上一頁」由容器回答，並隨 stack 變更保持正確——所以 root 不會有返回鍵，每一頁都可以照傳同一個 `backAction`。傳 `nil` 解除。Objective-C 是 `-bindToNavigationItem:backAction:`。
 
 **系統型的 item 會變成空按鈕。** `UIBarButtonItem(barButtonSystemItem:)`（done、cancel、add 這類）的 title、image、customView 全是 nil，而 UIKit 沒有公開的方法讀出它是哪一種系統 item，所以鏡射只能畫出一顆空按鈕。Debug build 遇到時會停在 assertion，Release build 則顯示那顆空按鈕。請改用明確的 title 或 image 建立這些 item。
 
@@ -630,6 +638,28 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **不支援自訂轉場。** 轉場的樣式（推拉與 parallax）是固定的，只有 `transitionDuration` 可調。自訂轉場協定不在 2.0 的範圍內。
 
+沒有它，仍然做得到兩種效果；兩者都在 iOS 26.5 模擬器上驗證過。
+
+- **淡入淡出。** 把無動畫的 stack 變更包在 view transition 裡：
+
+  ~~~swift
+  UIView.transition(with: container.view, duration: 0.3, options: .transitionCrossDissolve) {
+      container.pushViewController(detail, animated: false)
+  }
+  ~~~
+
+  這之所以成立，是因為無動畫的變更在方法 return 之前就完成，連 view 也換好了，所以換頁發生在 block 之內。內容與兩頁的 chrome 都會淡入淡出。生命週期方法與 delegate 收到的是 `animated: false`。返回（包含邊緣手勢）仍然是推拉；要讓返回鍵的 pop 也淡入淡出，就用同樣的方式包 `popViewController(animated: false)`。新頁若把 Tab Bar 藏起來或叫出來，Tab Bar 不會淡入淡出，而是用整段轉場的時間滑動。
+
+- **下拉選單。** 以 `.overCurrentContext` 呈現，並讓容器當 presentation context：
+
+  ~~~swift
+  container.definesPresentationContext = true
+  menu.modalPresentationStyle = .overCurrentContext
+  present(menu, animated: true)
+  ~~~
+
+  頁面的內容排在容器的 chrome 之下，所以以頁面為範圍的選單——由頁面自己設 `definesPresentationContext`——也會落在 chrome 底下，在 sheet 裡也一樣。以容器為範圍，選單才會蓋過 chrome。
+
 **More 沒有擴充點。** `TeroTabMorePresentationStyle` 只有內建的幾種呈現方式，不接受自訂容器。
 
 **iOS 26 以下沒有 FloatingGlass。** 實際樣式一律降級為 Classic，因此在這些版本上也沒有捲動最小化。**降級的目標是「隱藏」，不是「不動」**——Classic 之下 `.minimizeOnScrollDown` 會被換成 `.hideOnScrollDown`。要讓舊系統上完全不反應，請在該頁明確回傳 `.none`。
@@ -648,7 +678,7 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 ### 從 `UINavigationController` 遷移
 
-`TeroNavigationContainer` **不是** `UINavigationController` 的子類，所以 `self.navigationController` 在 Tero 的階層裡是 `nil`。Tero **不提供相容層**，理由見下。
+`TeroNavigationContainer` **不是** `UINavigationController` 的子類，所以 `self.navigationController` 在 Tero 的階層裡是 `nil`；對應物是 `teroNavigationContainer`。Tero **不提供相容層**，理由見下。
 
 常見的做法是在 consumer 端補一層 shim，把容器硬轉成 `UINavigationController *` 再用 category 補齊成員。這條路有兩個坑，都是實際踩過的：
 
@@ -676,11 +706,15 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **六、底部 sheet 不要包導覽容器。** iOS 26 會接管導覽容器的呈現，於是 sheet 的圓角與位置就不再由你的 animator 決定——圓角變成系統的、指定的高度失效。為了一條標題列而包一層並不划算，做一個純 view 的標題列即可。
 
+**七、藏返回鍵請用 `hidesBackButton`。** `UINavigationController` 時代常用一顆空的 left item（`initWithTitle:nil target:nil action:nil`）把返回鍵藏起來。鏡射分不出這顆 item 和壞掉的 item，所以 Debug build 會停在空白按鈕的 assertion（見[鏡射 `UINavigationItem`](#鏡射-uinavigationitem)）；請改成 `navigationItem.hidesBackButton = YES`。舊的 `fixedSpace`、`flexibleSpace` spacer 也會停在那裡，直接刪掉即可：導覽列自己會排間距。
+
 **建議的順序：先換容器、長得跟以前一樣，之後才換外觀。** 導覽列按鈕的材質用 `.automatic`，讓它跟著 Tab Bar 的 style 走：切 `.classic` 時整個 App 退回原本的外觀，先確認「換容器」沒有造成回歸；乾淨之後再開 `.floatingGlass`，這時看到的每一個問題都確定是外觀造成的。
 
 ## API 穩定性
 
 minor 版本僅新增 API，patch 版本僅修 bug，破壞性變更進下一個 major 版本。
+
+**2.1.0 是目前唯一的例外。** Objective-C 端有四個屬性的名稱改成 UIKit 的 `getter=is…` 慣例——`TeroNavigationContainer` 的 `interactivePopGestureEnabled` 與 `scrollEdgeEffectEnabled`，以及 `TeroTabItem`、`TeroTabActionItem` 的 `enabled`——Swift 名稱不變。沿用舊名讀取仍然編譯得過，沿用舊名賦值則會失敗，編譯器會在每個呼叫點指出找不到的 `setIs…:` setter。[`CHANGELOG.md`](CHANGELOG.md) 列出四組對照。
 
 **公開表面由兩份基準釘住**：`Scripts/api/` 下 Swift 與 Objective-C 各一份。`Scripts/check-public-api.sh` 每次都拿建置結果與它們比對，任何增刪都會讓 CI 轉紅，直到有意地重新產生基準為止（見[開發](#開發)）。
 

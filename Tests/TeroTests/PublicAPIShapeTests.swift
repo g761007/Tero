@@ -106,6 +106,30 @@ final class PublicAPIShapeTests: TeroTabBarControllerTestCase {
         XCTAssertIdentical(tab.item, item)
     }
 
+    // MARK: Objective-C 的 Bool 屬性名稱
+
+    /// 比照 UIKit：屬性 `enabled`、getter `isEnabled`、setter `setEnabled:`。
+    ///
+    /// Swift 的 `var isX: Bool` 預設輸出成 `isX` 與 `setIsX:`，Objective-C 那一側寫起來就是
+    /// `[container setIsInteractivePopGestureEnabled:NO]`。
+    func test_objectiveCBooleanPropertiesFollowTheUIKitNaming() {
+        let properties: [(type: AnyClass, name: String)] = [
+            (TeroNavigationContainer.self, "InteractivePopGestureEnabled"),
+            (TeroNavigationContainer.self, "ScrollEdgeEffectEnabled"),
+            (TeroTabItem.self, "Enabled"),
+            (TeroTabActionItem.self, "Enabled"),
+        ]
+        for property in properties {
+            let label = "\(property.type).\(property.name)"
+            XCTAssertTrue(property.type.instancesRespond(to: NSSelectorFromString("is\(property.name)")),
+                          "\(label) 的 getter 是 is…")
+            XCTAssertTrue(property.type.instancesRespond(to: NSSelectorFromString("set\(property.name):")),
+                          "\(label) 的 setter 是 set…:")
+            XCTAssertFalse(property.type.instancesRespond(to: NSSelectorFromString("setIs\(property.name):")),
+                           "\(label) 不該再有 setIs…:")
+        }
+    }
+
     // MARK: Main thread（計畫書 §51）
 
     func test_apiCalledOffMainThreadIsReported() {

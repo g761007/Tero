@@ -35,9 +35,8 @@
   TeroNavigationContainer.delegate
   TeroNavigationContainer.init
   TeroNavigationContainer.initWithRootViewController:
+  TeroNavigationContainer.interactivePopGestureEnabled
   TeroNavigationContainer.interactivePopGestureRecognizer
-  TeroNavigationContainer.isInteractivePopGestureEnabled
-  TeroNavigationContainer.isScrollEdgeEffectEnabled
   TeroNavigationContainer.popToRootViewControllerAnimated:
   TeroNavigationContainer.popToViewController:animated:
   TeroNavigationContainer.popViewControllerAnimated:
@@ -47,6 +46,7 @@
   TeroNavigationContainer.preferredTeroTabVisibilityPolicy
   TeroNavigationContainer.pushViewController:animated:
   TeroNavigationContainer.rootViewController
+  TeroNavigationContainer.scrollEdgeEffectEnabled
   TeroNavigationContainer.setNeedsChromeGeometryUpdate
   TeroNavigationContainer.setViewControllers:animated:
   TeroNavigationContainer.shouldAutomaticallyForwardAppearanceMethods
@@ -71,10 +71,10 @@
   TeroTab.viewController
   TeroTabActionItem.accessibilityIdentifier
   TeroTabActionItem.contentProvider
+  TeroTabActionItem.enabled
   TeroTabActionItem.identifier
   TeroTabActionItem.image
   TeroTabActionItem.initWithIdentifier:image:
-  TeroTabActionItem.isEnabled
   TeroTabBadge.backgroundColor
   TeroTabBadge.badgeWithValue:
   TeroTabBadge.copyWithZone:
@@ -194,9 +194,9 @@
   TeroTabItem.accessibilityIdentifier
   TeroTabItem.badge
   TeroTabItem.contentProvider
+  TeroTabItem.enabled
   TeroTabItem.image
   TeroTabItem.initWithTitle:image:selectedImage:
-  TeroTabItem.isEnabled
   TeroTabItem.overflowImage
   TeroTabItem.selectedImage
   TeroTabItem.selectionSize
@@ -212,6 +212,7 @@
   TeroTabMoreItem.selectedImage
   TeroTabMoreItem.title
   TeroTabVisibilityProviding.preferredTeroTabVisibilityPolicy
+  UIViewController.teroNavigationContainer
 class TeroNavigationBar
 class TeroNavigationButton
 class TeroNavigationContainer

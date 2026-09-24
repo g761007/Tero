@@ -43,7 +43,7 @@ It does not exist to make a prettier tab bar. It exists so that **tab navigation
 
 ~~~swift
 dependencies: [
-    .package(url: "https://github.com/g761007/Tero.git", from: "2.0.0")
+    .package(url: "https://github.com/g761007/Tero.git", from: "2.1.0")
 ]
 ~~~
 
@@ -54,7 +54,7 @@ platform :ios, '15.0'
 use_frameworks! :linkage => :static
 
 target 'YourApp' do
-  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.0.0'
+  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.0'
 end
 ~~~
 
@@ -342,6 +342,14 @@ let tab = TeroTab(
 
 Each tab keeps its own stack, and switching away and back does not reset it.
 
+A screen reaches its container through `teroNavigationContainer`, the counterpart of `navigationController` (which is `nil` inside a Tero hierarchy): the nearest `TeroNavigationContainer` up the `parent` chain.
+
+~~~swift
+teroNavigationContainer?.pushViewController(DetailViewController(), animated: true)
+~~~
+
+It is computed and holds nothing, and it already works inside `makeTeroNavigationChromeView()`. A screen that `setViewControllers(_:animated:)` places below the top is not a child until it is first shown, and sees `nil` until then.
+
 **Stack changes are synchronous**: `viewControllers` and `topViewController` hold the new values before the method returns, and the animation is only the picture catching up. Send another change mid-transition and the running segment settles to its own endpoint immediately while the new one starts from a clean hierarchy — nothing is dropped and nothing queues. Dropping would leave a child that never received `didMove(toParent:)`.
 
 Interactive pop is the one exception: it does not commit until the finish threshold is met, so cancelling leaves the stack untouched.
@@ -392,7 +400,7 @@ Four rules produce correct chrome:
 3. **Chrome views should be translucent.** Content scrolls underneath, and a solid fill hides that relationship. `TeroNavigationBar` uses a `UIBlurEffect` by default and only switches to solid when Reduce Transparency is on; custom chrome should do the same.
 
    On iOS 26 the container installs a `.top` `UIScrollEdgeElementContainerInteraction` (the bottom tab bar installs the symmetric `.bottom`), tracking whatever the screen returns from `teroTrackingScrollView`. Either interaction exists only while there is a scroll view to track; an idle one is removed, because it is not free — it changes colour resolution inside its container, and on the tab bar it made iOS 26's observation tracking report a feedback loop on every layout. **It does take hold, in a way that matters for opaque chrome**: inside that container, dynamic system colours resolve to their bar variants — on the iOS 26 simulator `systemBackground` renders as (245, 245, 245) rather than white, while fixed colours such as `.white` are untouched. A chrome that must match the content exactly, like an Instagram-style white header, should turn the effect off with `container.isScrollEdgeEffectEnabled = false` or use a fixed colour. Whether the soft edge itself shows on a translucent chrome still needs a device check; do any edge treatment you depend on in the chrome view yourself.
-4. **A chrome view must not hold the container strongly.** The container holds the screen, the screen holds the chrome view, and a strong reference back to the container closes the cycle. Use `weak var` to push or pop from chrome.
+4. **A chrome view must not hold the container strongly.** The container holds the screen, the screen holds the chrome view, and a strong reference back to the container closes the cycle. To push or pop from chrome, capture `[weak self]` and go through `teroNavigationContainer`, which holds nothing.
 
 **Chrome takes part in the transition.** During an animated push or pop both screens' chrome sit in the container: the outgoing one fades out, the incoming one fades in, and the chrome height interpolates between the two declared heights, all in the same animator as the content. During an interactive pop they follow the finger, and a cancelled gesture puts the outgoing chrome back. The reserved inset still switches at commit, so the incoming screen lays out with its own height from the first frame.
 
@@ -497,7 +505,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
     func makeTeroNavigationChromeView() -> UIView {
         let bar = TeroNavigationBar(frame: .zero)
         bar.bind(to: navigationItem, backAction: { [weak self] in
-            self?.container?.popViewController(animated: true)   // weak: chrome must not hold the container
+            self?.teroNavigationContainer?.popViewController(animated: true)   // weak: the chrome belongs to this screen
         })
         return bar
     }
@@ -505,7 +513,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
 }
 ~~~
 
-`title`, `titleView`, `leftBarButtonItems`, `rightBarButtonItems`, `hidesBackButton` and `leftItemsSupplementBackButton` are mirrored, and every `UIBarButtonItem`'s `isEnabled`, `title`, `image` and `tintColor` are watched afterwards, so screens that swap buttons at runtime keep working. A `UIBarButtonItem` becomes a `TeroNavigationButton` with the bar's `defaultButtonMaterial` and UIKit's sizes — 17pt regular for `.plain`, 17pt semibold for `.done` — and keeps its target-action, `primaryAction` and `menu`; a `customView` is used as is. A text button also takes the item's own `titleTextAttributes`, and they win over the bar's defaults: the colours for the normal and disabled states beat `buttonTitleColor`, and the normal state's font replaces the 17pt default. A back button is synthesised when you pass a `backAction`, the item does not hide its back button, and there are no left items (or they supplement it), which is how UIKit decides too. Pass `nil` to unbind. Objective-C: `-bindToNavigationItem:backAction:`.
+`title`, `titleView`, `leftBarButtonItems`, `rightBarButtonItems`, `hidesBackButton` and `leftItemsSupplementBackButton` are mirrored, and every `UIBarButtonItem`'s `isEnabled`, `title`, `image` and `tintColor` are watched afterwards, so screens that swap buttons at runtime keep working. A `UIBarButtonItem` becomes a `TeroNavigationButton` with the bar's `defaultButtonMaterial` and UIKit's sizes — 17pt regular for `.plain`, 17pt semibold for `.done` — and keeps its target-action, `primaryAction` and `menu`; a `customView` is used as is. An image whose rendering mode is `.automatic` is drawn as a template and takes the bar's tint, as it does in `UINavigationBar`; use `.alwaysOriginal` to keep its colours. A `TeroNavigationButton` you create yourself is a plain `UIButton` and keeps an `.automatic` image's own colours, so pass a template image or an SF Symbol there when you want the tint. A text button also takes the item's own `titleTextAttributes`, and they win over the bar's defaults: the colours for the normal and disabled states beat `buttonTitleColor`, and the normal state's font replaces the 17pt default. A back button is synthesised when you pass a `backAction`, there is a screen to go back to, the item does not hide its back button, and there are no left items (or they supplement it), which is how UIKit decides too. Inside a `TeroNavigationContainer` the container answers the second condition and keeps it current as the stack changes — so the root never shows one, and every screen can pass the same `backAction`. Pass `nil` to unbind. Objective-C: `-bindToNavigationItem:backAction:`.
 
 **System items come out empty.** `UIBarButtonItem(barButtonSystemItem:)` — done, cancel, add — has no title, image or custom view, and UIKit has no public way to read which system item it is, so the mirror can only draw an empty button. Debug builds stop on an assertion when that happens; Release builds show the empty button. Give those items an explicit title or image.
 
@@ -630,6 +638,28 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 **Custom transitions are not supported.** The transition style — push, pull and parallax — is fixed, and only `transitionDuration` is adjustable. A custom transition protocol is out of scope for 2.0.
 
+Two effects are still within reach without one; both were checked on the iOS 26.5 simulator.
+
+- **A cross-fade.** Wrap a stack change without animation in a view transition:
+
+  ~~~swift
+  UIView.transition(with: container.view, duration: 0.3, options: .transitionCrossDissolve) {
+      container.pushViewController(detail, animated: false)
+  }
+  ~~~
+
+  It works because a change without animation completes before the method returns, views included, so it happens inside the block. The content and both screens' chrome fade. The lifecycle calls and the delegate report `animated: false`. Going back is still the push-and-pull slide, edge gesture included; wrap `popViewController(animated: false)` the same way to fade a back button's pop. A tab bar that the new screen hides or shows does not fade: it slides for the length of the transition.
+
+- **A drop-down menu.** Present it over the current context, with the container as that context:
+
+  ~~~swift
+  container.definesPresentationContext = true
+  menu.modalPresentationStyle = .overCurrentContext
+  present(menu, animated: true)
+  ~~~
+
+  A screen's content sits beneath the container's chrome, so a menu scoped to the screen — the screen setting `definesPresentationContext` itself — ends up under the chrome too, in a sheet or not. Scoped to the container, it covers the chrome.
+
 **More has no extension point.** `TeroTabMorePresentationStyle` offers only its built-in presentations and does not take a custom container.
 
 **There is no FloatingGlass below iOS 26.** The effective style always falls back to Classic, so there is no scroll minimisation on those versions either. **The fallback target is "hide", not "do nothing"** — under Classic, `.minimizeOnScrollDown` becomes `.hideOnScrollDown`. To get no reaction at all on older systems, return `.none` from that screen explicitly.
@@ -648,7 +678,7 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 ### Migrating from `UINavigationController`
 
-`TeroNavigationContainer` is **not** a subclass of `UINavigationController`, so `self.navigationController` is `nil` inside a Tero hierarchy. Tero **provides no compatibility layer**; the reasoning is below.
+`TeroNavigationContainer` is **not** a subclass of `UINavigationController`, so `self.navigationController` is `nil` inside a Tero hierarchy; `teroNavigationContainer` is its counterpart. Tero **provides no compatibility layer**; the reasoning is below.
 
 The common move is a shim on the consumer side that casts the container to `UINavigationController *` and fills in the missing members with a category. That road has two pits, both of them stepped in for real:
 
@@ -676,11 +706,15 @@ The fix is to promote the main scroll view to `.always`. **Promote only the main
 
 **Six: do not wrap a bottom sheet in a navigation container.** iOS 26 takes over the presentation of a navigation container, so the sheet's corner radius and position stop being your animator's decision — the corners become the system's and your specified height stops applying. Wrapping one just to get a title row is a bad trade; build a plain view for the title row instead.
 
+**Seven: hide the back button with `hidesBackButton`.** Under `UINavigationController`, an empty left item — `initWithTitle:nil target:nil action:nil` — was a common way to hide it. The mirror cannot tell that item from a broken one, so Debug builds stop on the empty-button assertion (see [Mirroring a `UINavigationItem`](#mirroring-a-uinavigationitem)); set `navigationItem.hidesBackButton = YES` instead. Legacy `fixedSpace` and `flexibleSpace` spacers stop there too and can simply be deleted: the bar spaces its own items.
+
 **A suggested order: swap the container first and keep the old look, then change the appearance.** Give navigation buttons the `.automatic` material so they follow the tab bar style: with `.classic` the whole app returns to its previous appearance, letting you confirm that swapping the container caused no regressions; once that is clean, turn on `.floatingGlass`, and every problem you then see is definitely an appearance problem.
 
 ## API stability
 
 Minor versions only add API, patch versions only fix bugs, and breaking changes go into the next major version.
+
+**2.1.0 is the one exception so far.** It renames four Objective-C property names to UIKit's `getter=is…` convention — `interactivePopGestureEnabled` and `scrollEdgeEffectEnabled` on `TeroNavigationContainer`, and `enabled` on `TeroTabItem` and `TeroTabActionItem` — while the Swift names stay the same. Reading through the old name still compiles; assigning through it does not, and the compiler names the missing `setIs…:` setter at each call site. [`CHANGELOG.md`](CHANGELOG.md) lists all four.
 
 **The public surface is pinned by two baselines** under `Scripts/api/`, one for Swift and one for Objective-C. `Scripts/check-public-api.sh` compares every build against them, so any addition or removal turns CI red until the baselines are regenerated on purpose (see [Development](#development)).
 

@@ -105,12 +105,18 @@ public final class TeroNavigationContainer: UIViewController {
     /// 會解析成 bar 的變體——`systemBackground` 畫出來是 (245, 245, 245) 而不是白，固定色不受影響。
     /// 半透明的 chrome 要它（內容捲過去時的邊緣處理）；不透明、要與內容同色的 chrome
     /// （Instagram 那種白底 header）關掉它，不然 header 會比內容灰一階。
-    @objc public var isScrollEdgeEffectEnabled = true {
-        didSet {
-            guard isScrollEdgeEffectEnabled != oldValue else { return }
+    ///
+    /// Objective-C 是 `scrollEdgeEffectEnabled`，getter 是 `isScrollEdgeEffectEnabled`，比照 UIKit。
+    @objc(scrollEdgeEffectEnabled)
+    public var isScrollEdgeEffectEnabled: Bool {
+        @objc(isScrollEdgeEffectEnabled) get { storedScrollEdgeEffectEnabled }
+        set {
+            guard newValue != storedScrollEdgeEffectEnabled else { return }
+            storedScrollEdgeEffectEnabled = newValue
             updateScrollEdgeSource()
         }
     }
+    private var storedScrollEdgeEffectEnabled = true
 
     private var storedScrollEdgeInteraction: AnyObject?
 
@@ -436,7 +442,6 @@ public final class TeroNavigationContainer: UIViewController {
         return recognizer
     }()
 
-    /// 是否啟用邊緣返回手勢。
     /// 驅動互動式返回的邊緣手勢辨識器。
     ///
     /// 公開它是為了**手勢仲裁**：頁面左緣若有橫向捲動的內容（輪播、照片 pager、可左滑的
@@ -449,9 +454,19 @@ public final class TeroNavigationContainer: UIViewController {
     /// 驅動這段手勢的三個入口維持 internal——2.0 不支援自訂返回手勢（見 README 的已知限制）。
     @objc public var interactivePopGestureRecognizer: UIGestureRecognizer { edgePanRecognizer }
 
-    @objc public var isInteractivePopGestureEnabled: Bool = true {
-        didSet { edgePanRecognizer.isEnabled = isInteractivePopGestureEnabled }
+    /// 是否啟用邊緣返回手勢。預設開。
+    ///
+    /// Objective-C 是 `interactivePopGestureEnabled`，getter 是 `isInteractivePopGestureEnabled`，
+    /// 比照 UIKit。
+    @objc(interactivePopGestureEnabled)
+    public var isInteractivePopGestureEnabled: Bool {
+        @objc(isInteractivePopGestureEnabled) get { storedInteractivePopGestureEnabled }
+        set {
+            storedInteractivePopGestureEnabled = newValue
+            edgePanRecognizer.isEnabled = newValue
+        }
     }
+    private var storedInteractivePopGestureEnabled = true
 
     @objc private func handleEdgePan(_ recognizer: UIScreenEdgePanGestureRecognizer) {
         let width = view.bounds.width
@@ -621,14 +636,45 @@ public final class TeroNavigationContainer: UIViewController {
         let chromeView = provider.makeTeroNavigationChromeView()
         chromeView.translatesAutoresizingMaskIntoConstraints = false
         chromeViews[key] = chromeView
-
-
+        updateBackNavigationAvailability()
     }
 
     private func removeChrome(for viewController: UIViewController) {
         let key = ObjectIdentifier(viewController)
         chromeViews[key]?.removeFromSuperview()
         chromeViews[key] = nil
+    }
+
+    /// 告訴每一頁的導覽列它有沒有上一頁可以回去，鏡射據此決定要不要合成返回鍵。
+    ///
+    /// 答案只有容器知道，而且要在 stack 提交之後才對：chrome 在提交之前就建立了、建好之後
+    /// 也不重建，頁面自己在 `makeTeroNavigationChromeView()` 裡判斷 root，會在換 root、
+    /// 空容器 push、root 被拿掉這幾種情況答錯。所以每次提交與每次建立 chrome 之後都重算一次。
+    /// 互動式返回判定 finish 時只拿掉最上面那一頁，其餘頁的位置不變，不必重算。
+    ///
+    /// 不在 stack 裡的頁面不動：pop 提交之後，離開的那一頁還在畫面上淡出，返回鍵要陪它到最後。
+    private func updateBackNavigationAvailability() {
+        for (index, viewController) in viewControllers.enumerated() {
+            guard let chromeView = chromeViews[ObjectIdentifier(viewController)] else { continue }
+            for bar in Self.navigationBars(in: chromeView) {
+                bar.canNavigateBack = index > 0
+            }
+        }
+    }
+
+    /// chrome view 本身或它子樹裡的 `TeroNavigationBar`：採用者可能把 bar 包在自己的 view 裡。
+    private static func navigationBars(in chromeView: UIView) -> [TeroNavigationBar] {
+        var bars: [TeroNavigationBar] = []
+        var queue = [chromeView]
+        while !queue.isEmpty {
+            let view = queue.removeFirst()
+            if let bar = view as? TeroNavigationBar {
+                bars.append(bar)
+            } else {
+                queue.append(contentsOf: view.subviews)
+            }
+        }
+        return bars
     }
 
     /// 把 top 的 chrome 放進容器，其餘移出。轉場中不動——那時兩頁的 chrome 都該在。
@@ -839,6 +885,7 @@ public final class TeroNavigationContainer: UIViewController {
         }
 
         viewControllers = newStack
+        updateBackNavigationAvailability()
 
         let canAnimate = animated && isViewLoaded && view.window != nil && incoming !== outgoing
         if let incoming, incoming !== outgoing {
@@ -981,6 +1028,32 @@ public final class TeroNavigationContainer: UIViewController {
     public override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
         topViewController?.preferredInterfaceOrientationForPresentation
             ?? super.preferredInterfaceOrientationForPresentation
+    }
+}
+
+// MARK: - 從子頁找到容器
+
+extension UIViewController {
+
+    /// 最近的上層 `TeroNavigationContainer`；不在任何容器裡時為 nil。
+    ///
+    /// `TeroNavigationContainer` 不是 `UINavigationController`，所以 `navigationController` 在
+    /// Tero 的階層裡是 nil，這是它的對應物：沿 `parent` 往上找，不含自己，也不走 presenting，
+    /// 與 `navigationController` 相同。
+    ///
+    /// 在 `makeTeroNavigationChromeView()` 裡已經找得到：容器建立 chrome 之前就把頁面收成 child。
+    /// 它是計算屬性，不持有任何東西，所以 chrome 上的動作寫成
+    /// `self?.teroNavigationContainer?.popViewController(animated: true)` 不會形成循環。
+    ///
+    /// `setViewControllers(_:animated:)` 放在下面、還沒顯示過的頁面還不是 child，
+    /// 第一次被顯示之前對它們回 nil。
+    @objc public var teroNavigationContainer: TeroNavigationContainer? {
+        var ancestor = parent
+        while let viewController = ancestor {
+            if let container = viewController as? TeroNavigationContainer { return container }
+            ancestor = viewController.parent
+        }
+        return nil
     }
 }
 

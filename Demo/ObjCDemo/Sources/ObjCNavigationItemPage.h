@@ -9,7 +9,4 @@
 
 @property (nonatomic, readonly, copy) NSString *pageTitle;
 
-/// 容器持有頁面，頁面只能反向弱引用。
-@property (nonatomic, weak) TeroNavigationContainer *container;
-
 @end

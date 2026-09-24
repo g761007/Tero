@@ -82,8 +82,6 @@ private class LabContentPage: UIViewController, TeroScrollProviding, UITableView
 private final class BarChromePage: LabContentPage, TeroNavigationChromeProviding {
     private let material: TeroNavigationButtonMaterial
     private let showsBack: Bool
-    /// 容器持有頁面，頁面只能反向弱引用。
-    weak var container: TeroNavigationContainer?
     var onTrailingAction: (() -> Void)?
 
     init(title: String, material: TeroNavigationButtonMaterial, showsBack: Bool) {
@@ -100,7 +98,7 @@ private final class BarChromePage: LabContentPage, TeroNavigationChromeProviding
             let back = TeroNavigationButton(image: UIImage(systemName: "chevron.left"), material: material)
             back.accessibilityIdentifier = "nav.back"
             back.addAction(UIAction { [weak self] _ in
-                self?.container?.popViewController(animated: true)
+                self?.teroNavigationContainer?.popViewController(animated: true)
             }, for: .touchUpInside)
             bar.leadingItems = [back]
         }
@@ -120,7 +118,6 @@ private final class BarChromePage: LabContentPage, TeroNavigationChromeProviding
 /// 既有頁面不改寫法就能接上：這一頁只碰 `navigationItem`，右上兩顆按鈕一顆 push、一顆
 /// 在執行期切自己的 `isEnabled`，鏡射要跟得上。
 private final class NavigationItemPage: LabContentPage, TeroNavigationChromeProviding {
-    weak var container: TeroNavigationContainer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -128,10 +125,8 @@ private final class NavigationItemPage: LabContentPage, TeroNavigationChromeProv
         let push = UIBarButtonItem(
             title: nil, image: UIImage(systemName: "plus.circle"),
             primaryAction: UIAction { [weak self] _ in
-                guard let self, let container = self.container else { return }
-                let detail = NavigationItemPage(title: "\(self.pageTitle) · detail")
-                detail.container = container
-                container.pushViewController(detail, animated: true)
+                guard let self, let container = self.teroNavigationContainer else { return }
+                container.pushViewController(NavigationItemPage(title: "\(self.pageTitle) · detail"), animated: true)
             }, menu: nil
         )
         push.accessibilityIdentifier = "mirror.push"
@@ -148,10 +143,9 @@ private final class NavigationItemPage: LabContentPage, TeroNavigationChromeProv
 
     func makeTeroNavigationChromeView() -> UIView {
         let bar = TeroNavigationBar(frame: .zero)
-        // root 沒有返回鍵；其餘頁面由呼叫端給返回動作，chrome 不必反向引用容器。
-        let isRoot = container?.rootViewController === self
-        bar.bind(to: navigationItem, backAction: isRoot ? nil : { [weak self] in
-            self?.container?.popViewController(animated: true)
+        // 每一頁都照傳同一個返回動作：root 不會有返回鍵，這由容器判斷。
+        bar.bind(to: navigationItem, backAction: { [weak self] in
+            self?.teroNavigationContainer?.popViewController(animated: true)
         })
         return bar
     }
@@ -214,11 +208,9 @@ final class NavigationLabViewController: UIViewController {
     ) -> TeroNavigationContainer {
         let root = BarChromePage(title: title, material: material, showsBack: false)
         let container = TeroNavigationContainer(rootViewController: root)
-        root.container = container
         root.onTrailingAction = { [weak container] in
             guard let container else { return }
             let detail = BarChromePage(title: "\(title) · detail", material: material, showsBack: true)
-            detail.container = container
             container.pushViewController(detail, animated: true)
         }
         return container
@@ -226,10 +218,7 @@ final class NavigationLabViewController: UIViewController {
 
     /// 單獨使用的容器：頂部 chrome 由 `navigationItem` 鏡射而來。
     private static func makeMirrorDemo() -> TeroNavigationContainer {
-        let root = NavigationItemPage(title: "Mirror")
-        let container = TeroNavigationContainer(rootViewController: root)
-        root.container = container
-        return container
+        TeroNavigationContainer(rootViewController: NavigationItemPage(title: "Mirror"))
     }
 
     /// 這幾個 Demo 都沒有系統導覽列，關閉鍵要自己放。

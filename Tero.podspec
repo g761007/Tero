@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'Tero'
-  s.version          = '2.0.0'
+  s.version          = '2.1.0'
   s.summary          = 'A hand-built tab bar and navigation container for iOS.'
   s.description      = <<~DESC
     Replaces UITabBarController and UINavigationController so that tab navigation
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   # 官方、實際上悄悄過期的管道。`:git` 不經 trunk，不受影響。
   #
   # 用法（Podfile）：
-  #   pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.0.0'
+  #   pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.0'
   s.source           = { :git => 'https://github.com/g761007/Tero.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '15.0'

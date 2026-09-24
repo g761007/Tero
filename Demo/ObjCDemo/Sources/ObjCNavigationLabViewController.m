@@ -74,7 +74,6 @@
 
         TeroNavigationContainer *container =
             [[TeroNavigationContainer alloc] initWithRootViewController:root];
-        root.container = container;
 
         __weak __typeof(self) weakSelf = self;
         __weak TeroNavigationContainer *weakContainer = container;
@@ -166,8 +165,6 @@
     self.pushCount += 1;
     ObjCCustomChromePage *detail = [[ObjCCustomChromePage alloc]
         initWithPageTitle:[NSString stringWithFormat:@"Detail %ld", (long)self.pushCount]];
-    detail.container = container;
-
     [container pushViewController:detail animated:YES];
     // 陣列在 return 之前就已變更，不等動畫（ADR-0014）。
     [self record:[NSString stringWithFormat:@"push → depth=%lu top=%@",
@@ -207,8 +204,6 @@
     self.pushCount += 1;
     ObjCCustomChromePage *replacement = [[ObjCCustomChromePage alloc]
         initWithPageTitle:[NSString stringWithFormat:@"Replaced %ld", (long)self.pushCount]];
-    replacement.container = container;
-
     [container setViewControllers:@[root, replacement] animated:YES];
     [self record:[NSString stringWithFormat:@"setViewControllers → depth=%lu",
                   (unsigned long)container.viewControllers.count]];
@@ -223,7 +218,6 @@
     self.pushCount += 1;
     ObjCNavigationItemPage *page = [[ObjCNavigationItemPage alloc]
         initWithPageTitle:[NSString stringWithFormat:@"Mirror %ld", (long)self.pushCount]];
-    page.container = container;
     [container pushViewController:page animated:YES];
     [self record:[NSString stringWithFormat:@"push mirror → depth=%lu",
                   (unsigned long)container.viewControllers.count]];
@@ -234,7 +228,7 @@
 {
     TeroNavigationContainer *container = [self selectedContainer];
     BOOL next = !container.isInteractivePopGestureEnabled;
-    container.isInteractivePopGestureEnabled = next;
+    container.interactivePopGestureEnabled = next;
     [self record:[NSString stringWithFormat:@"邊緣返回手勢：%@", next ? @"開" : @"關"]];
     [self refresh];
 }
