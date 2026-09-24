@@ -122,7 +122,7 @@
 - (void)popTapped
 {
     // 回傳被移除的那一個；這裡用不到，Lab 的控制列會把它記進 journal。
-    [self.container popViewControllerAnimated:YES];
+    [self.teroNavigationContainer popViewControllerAnimated:YES];
 }
 
 - (void)pushTapped

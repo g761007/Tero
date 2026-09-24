@@ -43,7 +43,7 @@
 
 ~~~swift
 dependencies: [
-    .package(url: "https://github.com/g761007/Tero.git", from: "2.0.0")
+    .package(url: "https://github.com/g761007/Tero.git", from: "2.1.0")
 ]
 ~~~
 
@@ -54,7 +54,7 @@ platform :ios, '15.0'
 use_frameworks! :linkage => :static
 
 target 'YourApp' do
-  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.0.0'
+  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.0'
 end
 ~~~
 

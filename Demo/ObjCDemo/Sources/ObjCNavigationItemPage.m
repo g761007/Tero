@@ -44,11 +44,10 @@
 - (UIView *)makeTeroNavigationChromeView
 {
     TeroNavigationBar *bar = [[TeroNavigationBar alloc] initWithFrame:CGRectZero];
-    BOOL isRoot = (self.container.rootViewController == self);
     __weak __typeof(self) weakSelf = self;
-    // root 沒有返回鍵；其餘頁面由呼叫端給返回動作，chrome 不必反向引用容器。
+    // 每一頁都照傳同一個返回動作：root 不會有返回鍵，這由容器判斷。
     [bar bindToNavigationItem:self.navigationItem
-                   backAction:isRoot ? nil : ^{ [weakSelf.container popViewControllerAnimated:YES]; }];
+                   backAction:^{ [weakSelf.teroNavigationContainer popViewControllerAnimated:YES]; }];
     return bar;
 }
 

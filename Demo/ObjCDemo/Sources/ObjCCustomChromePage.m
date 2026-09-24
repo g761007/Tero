@@ -139,7 +139,7 @@
 
 - (void)customBackTapped
 {
-    [self.container popViewControllerAnimated:YES];
+    [self.teroNavigationContainer popViewControllerAnimated:YES];
 }
 
 @end
