@@ -505,7 +505,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
 }
 ~~~
 
-鏡射的有 `title`、`titleView`、`leftBarButtonItems`、`rightBarButtonItems`、`hidesBackButton`、`leftItemsSupplementBackButton`，之後每顆 `UIBarButtonItem` 的 `isEnabled`、`title`、`image`、`tintColor` 也持續盯著，執行期換按鈕的頁面照樣能用。`UIBarButtonItem` 變成套用導覽列 `defaultButtonMaterial` 的 `TeroNavigationButton`，字型比照 UIKit——`.plain` 17pt regular、`.done` 17pt semibold——並保留 target-action、`primaryAction` 與 `menu`；`customView` 直接沿用。文字按鈕還會採用 item 自己的 `titleTextAttributes`，而且優先於導覽列的預設：normal 與 disabled 的顏色贏過 `buttonTitleColor`，normal 的字型取代 17pt 的預設。傳了 `backAction`、item 沒有藏返回鍵、也沒有自己的 left items（或它們是補在返回鍵旁的）時合成一顆返回鍵，判準與 UIKit 相同。傳 `nil` 解除。Objective-C 是 `-bindToNavigationItem:backAction:`。
+鏡射的有 `title`、`titleView`、`leftBarButtonItems`、`rightBarButtonItems`、`hidesBackButton`、`leftItemsSupplementBackButton`，之後每顆 `UIBarButtonItem` 的 `isEnabled`、`title`、`image`、`tintColor` 也持續盯著，執行期換按鈕的頁面照樣能用。`UIBarButtonItem` 變成套用導覽列 `defaultButtonMaterial` 的 `TeroNavigationButton`，字型比照 UIKit——`.plain` 17pt regular、`.done` 17pt semibold——並保留 target-action、`primaryAction` 與 `menu`；`customView` 直接沿用。文字按鈕還會採用 item 自己的 `titleTextAttributes`，而且優先於導覽列的預設：normal 與 disabled 的顏色贏過 `buttonTitleColor`，normal 的字型取代 17pt 的預設。傳了 `backAction`、有上一頁可以回去、item 沒有藏返回鍵、也沒有自己的 left items（或它們是補在返回鍵旁的）時合成一顆返回鍵，判準與 UIKit 相同。在 `TeroNavigationContainer` 裡，「有沒有上一頁」由容器回答，並隨 stack 變更保持正確——所以 root 不會有返回鍵，每一頁都可以照傳同一個 `backAction`。傳 `nil` 解除。Objective-C 是 `-bindToNavigationItem:backAction:`。
 
 **系統型的 item 會變成空按鈕。** `UIBarButtonItem(barButtonSystemItem:)`（done、cancel、add 這類）的 title、image、customView 全是 nil，而 UIKit 沒有公開的方法讀出它是哪一種系統 item，所以鏡射只能畫出一顆空按鈕。Debug build 遇到時會停在 assertion，Release build 則顯示那顆空按鈕。請改用明確的 title 或 image 建立這些 item。
 

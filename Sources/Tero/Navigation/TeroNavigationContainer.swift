@@ -621,14 +621,45 @@ public final class TeroNavigationContainer: UIViewController {
         let chromeView = provider.makeTeroNavigationChromeView()
         chromeView.translatesAutoresizingMaskIntoConstraints = false
         chromeViews[key] = chromeView
-
-
+        updateBackNavigationAvailability()
     }
 
     private func removeChrome(for viewController: UIViewController) {
         let key = ObjectIdentifier(viewController)
         chromeViews[key]?.removeFromSuperview()
         chromeViews[key] = nil
+    }
+
+    /// 告訴每一頁的導覽列它有沒有上一頁可以回去，鏡射據此決定要不要合成返回鍵。
+    ///
+    /// 答案只有容器知道，而且要在 stack 提交之後才對：chrome 在提交之前就建立了、建好之後
+    /// 也不重建，頁面自己在 `makeTeroNavigationChromeView()` 裡判斷 root，會在換 root、
+    /// 空容器 push、root 被拿掉這幾種情況答錯。所以每次提交與每次建立 chrome 之後都重算一次。
+    /// 互動式返回判定 finish 時只拿掉最上面那一頁，其餘頁的位置不變，不必重算。
+    ///
+    /// 不在 stack 裡的頁面不動：pop 提交之後，離開的那一頁還在畫面上淡出，返回鍵要陪它到最後。
+    private func updateBackNavigationAvailability() {
+        for (index, viewController) in viewControllers.enumerated() {
+            guard let chromeView = chromeViews[ObjectIdentifier(viewController)] else { continue }
+            for bar in Self.navigationBars(in: chromeView) {
+                bar.canNavigateBack = index > 0
+            }
+        }
+    }
+
+    /// chrome view 本身或它子樹裡的 `TeroNavigationBar`：採用者可能把 bar 包在自己的 view 裡。
+    private static func navigationBars(in chromeView: UIView) -> [TeroNavigationBar] {
+        var bars: [TeroNavigationBar] = []
+        var queue = [chromeView]
+        while !queue.isEmpty {
+            let view = queue.removeFirst()
+            if let bar = view as? TeroNavigationBar {
+                bars.append(bar)
+            } else {
+                queue.append(contentsOf: view.subviews)
+            }
+        }
+        return bars
     }
 
     /// 把 top 的 chrome 放進容器，其餘移出。轉場中不動——那時兩頁的 chrome 都該在。
@@ -839,6 +870,7 @@ public final class TeroNavigationContainer: UIViewController {
         }
 
         viewControllers = newStack
+        updateBackNavigationAvailability()
 
         let canAnimate = animated && isViewLoaded && view.window != nil && incoming !== outgoing
         if let incoming, incoming !== outgoing {

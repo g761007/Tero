@@ -302,8 +302,10 @@ public final class TeroNavigationBar: UIView {
     /// `UIBarButtonItem` 變成 `TeroNavigationButton`（`.automatic` 材質；Plain 17pt regular、
     /// Done 17pt semibold），`customView` 直接沿用。
     ///
-    /// `backAction` 非 nil、頁面沒有 `hidesBackButton`、也沒有自己的 left items 時合成一顆
-    /// 返回鍵。返回動作由呼叫端提供，chrome view 因此不必反向引用容器（ADR-0013）。
+    /// `backAction` 非 nil、有上一頁可以回去、頁面沒有 `hidesBackButton`、也沒有自己的
+    /// left items 時合成一顆返回鍵。「有沒有上一頁」在容器裡由容器判斷，root 沒有返回鍵，
+    /// 所以每一頁都可以照傳同一個 `backAction`。返回動作由呼叫端提供，chrome view 因此
+    /// 不必反向引用容器（ADR-0013）。
     ///
     /// 再呼叫一次換對象；傳 nil 解除，bar 停在最後一次同步的樣子。
     ///
@@ -317,6 +319,18 @@ public final class TeroNavigationBar: UIView {
             return
         }
         navigationItemMirror = TeroNavigationItemMirror(bar: self, item: navigationItem, backAction: backAction)
+    }
+
+    /// 所在的容器說這一頁有沒有上一頁可以回去；鏡射據此決定要不要合成返回鍵。
+    ///
+    /// 這個答案只有容器知道，而且要等 stack 提交之後才對：chrome 在提交之前就建立了，
+    /// 頁面在那一刻判斷不出自己會不會是 root。所以由容器在每次 stack 變更後寫進來。
+    /// 不在任何容器裡的 bar 維持 `true`，與先前相同。
+    internal var canNavigateBack = true {
+        didSet {
+            guard canNavigateBack != oldValue else { return }
+            navigationItemMirror?.sync()
+        }
     }
     private let backdrop = UIVisualEffectView(effect: nil)
     private var reduceTransparencyObserver: NSObjectProtocol?

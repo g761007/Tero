@@ -56,7 +56,9 @@ internal final class TeroNavigationItemMirror: NSObject {
         let rightItems = item.rightBarButtonItems ?? []
 
         var leading: [UIView] = []
-        if let back = resolvedBackButton(leftItems: leftItems) { leading.append(back) }
+        if let back = resolvedBackButton(leftItems: leftItems, canNavigateBack: bar.canNavigateBack) {
+            leading.append(back)
+        }
         leading.append(contentsOf: leftItems.map(view(for:)))
         bar.leadingItems = leading
         // 反轉才對得上 UIKit：`rightBarButtonItems` 的第 0 顆貼著右緣、往左排，
@@ -71,10 +73,10 @@ internal final class TeroNavigationItemMirror: NSObject {
         observeButtons(leftItems + rightItems)
     }
 
-    /// 合成的返回鍵：有動作可接、頁面沒有藏返回鍵、而且沒有自己的 left items
-    /// （除非它說 left items 是補在返回鍵旁邊的）。
-    private func resolvedBackButton(leftItems: [UIBarButtonItem]) -> TeroNavigationButton? {
-        guard backAction != nil, !item.hidesBackButton,
+    /// 合成的返回鍵：有動作可接、有上一頁可以回去、頁面沒有藏返回鍵、而且沒有自己的
+    /// left items（除非它說 left items 是補在返回鍵旁邊的）。
+    private func resolvedBackButton(leftItems: [UIBarButtonItem], canNavigateBack: Bool) -> TeroNavigationButton? {
+        guard backAction != nil, canNavigateBack, !item.hidesBackButton,
               leftItems.isEmpty || item.leftItemsSupplementBackButton else {
             backButton = nil
             return nil
