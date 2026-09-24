@@ -105,12 +105,18 @@ public final class TeroNavigationContainer: UIViewController {
     /// 會解析成 bar 的變體——`systemBackground` 畫出來是 (245, 245, 245) 而不是白，固定色不受影響。
     /// 半透明的 chrome 要它（內容捲過去時的邊緣處理）；不透明、要與內容同色的 chrome
     /// （Instagram 那種白底 header）關掉它，不然 header 會比內容灰一階。
-    @objc public var isScrollEdgeEffectEnabled = true {
-        didSet {
-            guard isScrollEdgeEffectEnabled != oldValue else { return }
+    ///
+    /// Objective-C 是 `scrollEdgeEffectEnabled`，getter 是 `isScrollEdgeEffectEnabled`，比照 UIKit。
+    @objc(scrollEdgeEffectEnabled)
+    public var isScrollEdgeEffectEnabled: Bool {
+        @objc(isScrollEdgeEffectEnabled) get { storedScrollEdgeEffectEnabled }
+        set {
+            guard newValue != storedScrollEdgeEffectEnabled else { return }
+            storedScrollEdgeEffectEnabled = newValue
             updateScrollEdgeSource()
         }
     }
+    private var storedScrollEdgeEffectEnabled = true
 
     private var storedScrollEdgeInteraction: AnyObject?
 
@@ -436,7 +442,6 @@ public final class TeroNavigationContainer: UIViewController {
         return recognizer
     }()
 
-    /// 是否啟用邊緣返回手勢。
     /// 驅動互動式返回的邊緣手勢辨識器。
     ///
     /// 公開它是為了**手勢仲裁**：頁面左緣若有橫向捲動的內容（輪播、照片 pager、可左滑的
@@ -449,9 +454,19 @@ public final class TeroNavigationContainer: UIViewController {
     /// 驅動這段手勢的三個入口維持 internal——2.0 不支援自訂返回手勢（見 README 的已知限制）。
     @objc public var interactivePopGestureRecognizer: UIGestureRecognizer { edgePanRecognizer }
 
-    @objc public var isInteractivePopGestureEnabled: Bool = true {
-        didSet { edgePanRecognizer.isEnabled = isInteractivePopGestureEnabled }
+    /// 是否啟用邊緣返回手勢。預設開。
+    ///
+    /// Objective-C 是 `interactivePopGestureEnabled`，getter 是 `isInteractivePopGestureEnabled`，
+    /// 比照 UIKit。
+    @objc(interactivePopGestureEnabled)
+    public var isInteractivePopGestureEnabled: Bool {
+        @objc(isInteractivePopGestureEnabled) get { storedInteractivePopGestureEnabled }
+        set {
+            storedInteractivePopGestureEnabled = newValue
+            edgePanRecognizer.isEnabled = newValue
+        }
     }
+    private var storedInteractivePopGestureEnabled = true
 
     @objc private func handleEdgePan(_ recognizer: UIScreenEdgePanGestureRecognizer) {
         let width = view.bounds.width

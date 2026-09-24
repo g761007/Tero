@@ -95,8 +95,6 @@
 @objc public var floatingGlassTintColor: UIColor?
 @objc public var floatingGlassTintMode: TeroTabGlassTintMode
 @objc public var interactivePopGestureRecognizer: UIGestureRecognizer { edgePanRecognizer }
-@objc public var isInteractivePopGestureEnabled: Bool = true
-@objc public var isScrollEdgeEffectEnabled = true
 @objc public var leadingItems: [UIView] = []
 @objc public var material: TeroNavigationButtonMaterial = .plain
 @objc public var moreItem: TeroTabMoreItem
@@ -141,16 +139,19 @@
 @objc(bindToNavigationItem:backAction:) public func bind(to navigationItem: UINavigationItem?, backAction: (() -> Void)?)
 @objc(coordinateNavigationTransition:toViewController:animated:) public func coordinateNavigationTransition( _ navigationController: UINavigationController, to destination: UIViewController, animated: Bool )
 @objc(currentConfiguration) public func currentConfiguration() -> TeroTabBarConfiguration
+@objc(enabled) public var isEnabled: Bool
 @objc(initWithConfiguration:) public init(configuration: TeroTabBarConfiguration)
 @objc(initWithIdentifier:image:) public init(identifier: String, image: UIImage?)
 @objc(initWithIdentifier:viewController:item:) public init(identifier: String, viewController: UIViewController, item: TeroTabItem)
 @objc(initWithRootViewController:) public convenience init(rootViewController: UIViewController)
 @objc(initWithTitle:image:selectedImage:) public init(title: String?, image: UIImage?, selectedImage: UIImage?)
+@objc(interactivePopGestureEnabled) public var isInteractivePopGestureEnabled: Bool
 @objc(popToRootViewControllerAnimated:) public func popToRootViewController(animated: Bool)
 @objc(pushViewController:animated:) public func pushViewController(_ viewController: UIViewController, animated: Bool)
 @objc(refreshScrollTracking) public func refreshScrollTracking()
 @objc(reloadAllTabsAnimated:) public func reloadAllTabs(animated: Bool)
 @objc(reloadTabWithIdentifier:animated:) public func reloadTab(withIdentifier identifier: String, animated: Bool)
+@objc(scrollEdgeEffectEnabled) public var isScrollEdgeEffectEnabled: Bool
 @objc(setActionItem:animated:) public func setActionItem(_ actionItem: TeroTabActionItem?, animated: Bool)
 @objc(setBadge:forTabWithIdentifier:animated:) public func setBadge( _ badge: TeroTabBadge?, forTabWithIdentifier identifier: String, animated: Bool )
 @objc(setTabs:selectedIdentifier:animated:) public func setTabs(_ newTabs: [TeroTab], selectedIdentifier: String?, animated: Bool)
@@ -285,7 +286,6 @@ public var glassTintMode: TeroTabGlassTintMode = .automatic
 public var hidesTitlesWhenMinimized: Bool = true
 public var horizontalInset: CGFloat = 16
 public var image: UIImage?
-public var isEnabled: Bool = true
 public var itemAppearance = TeroTabItemAppearance()
 public var maximumVisibleItems: Int = 5
 public var minimizeDuration: TimeInterval = 0.28

@@ -234,7 +234,7 @@
 {
     TeroNavigationContainer *container = [self selectedContainer];
     BOOL next = !container.isInteractivePopGestureEnabled;
-    container.isInteractivePopGestureEnabled = next;
+    container.interactivePopGestureEnabled = next;
     [self record:[NSString stringWithFormat:@"邊緣返回手勢：%@", next ? @"開" : @"關"]];
     [self refresh];
 }

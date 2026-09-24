@@ -24,7 +24,13 @@ public final class TeroTabItem: NSObject {
     /// `minimumSize` 同一種處理。
     public var selectionSize: CGSize = .zero
 
-    public var isEnabled: Bool = true
+    /// Objective-C 是 `enabled`，getter 是 `isEnabled`，比照 UIKit。
+    @objc(enabled)
+    public var isEnabled: Bool {
+        @objc(isEnabled) get { storedIsEnabled }
+        set { storedIsEnabled = newValue }
+    }
+    private var storedIsEnabled = true
 
     /// `accessibilityLabel` 繼承自 `NSObject` 的 UIAccessibility 成員，不重新宣告
     /// （NSObject 已提供，以 stored property 覆寫會編譯失敗）。
