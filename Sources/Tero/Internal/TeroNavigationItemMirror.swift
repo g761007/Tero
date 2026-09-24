@@ -212,8 +212,8 @@ internal final class TeroNavigationItemMirror: NSObject {
         button.menu = barItem.menu
         button.showsMenuAsPrimaryAction = (barItem.menu != nil && barItem.primaryAction == nil
                                            && barItem.action == nil)
-        if barItem.image != nil {
-            button.setImage(barItem.image, for: .normal)
+        if let image = barItem.image {
+            button.setImage(barImage(image), for: .normal)
         } else {
             button.setTitle(barItem.title, for: .normal)
             // 比照 UIKit：Plain 是 17pt regular、Done 是 17pt semibold。接入筆記記過寫死
@@ -224,6 +224,17 @@ internal final class TeroNavigationItemMirror: NSObject {
             applyTitleTextAttributes(of: barItem, to: button)
         }
         button.accessibilityLabel = barItem.accessibilityLabel ?? barItem.title
+    }
+
+    /// `UINavigationBar` 把 `.automatic` 的圖當 template 畫、吃 bar 的 tint；`.custom` 型的
+    /// `UIButton` 則照原色畫。鏡射對齊前者，與反轉右側按鈕、釘住 `customView` 尺寸同一個
+    /// 道理：對齊 UIKit 是相容層的責任。
+    ///
+    /// symbol 不轉：它本來就吃 tint，轉成 template 反而會吃掉 multicolor 之類的設定。
+    /// `.alwaysOriginal` 不轉：要原色就這樣寫，與 UIKit 相同。
+    private static func barImage(_ image: UIImage) -> UIImage {
+        guard image.renderingMode == .automatic, !image.isSymbolImage else { return image }
+        return image.withRenderingMode(.alwaysTemplate)
     }
 
     private func prune(keeping items: [UIBarButtonItem]) {
