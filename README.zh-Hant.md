@@ -714,7 +714,7 @@ carousel.panGestureRecognizer.require(toFail: container.interactivePopGestureRec
 
 minor 版本僅新增 API，patch 版本僅修 bug，破壞性變更進下一個 major 版本。
 
-**2.1.0 是目前唯一的例外。** Objective-C 端有四個屬性的名稱改成 UIKit 的 `getter=is…` 慣例——`TeroNavigationContainer` 的 `interactivePopGestureEnabled` 與 `scrollEdgeEffectEnabled`，以及 `TeroTabItem`、`TeroTabActionItem` 的 `enabled`——Swift 名稱不變。沿用舊名讀取仍然編譯得過，沿用舊名賦值則會失敗，編譯器會在每個呼叫點指出找不到的 `setIs…:` setter。release note 列出四組對照。
+**2.1.0 是目前唯一的例外。** Objective-C 端有四個屬性的名稱改成 UIKit 的 `getter=is…` 慣例——`TeroNavigationContainer` 的 `interactivePopGestureEnabled` 與 `scrollEdgeEffectEnabled`，以及 `TeroTabItem`、`TeroTabActionItem` 的 `enabled`——Swift 名稱不變。沿用舊名讀取仍然編譯得過，沿用舊名賦值則會失敗，編譯器會在每個呼叫點指出找不到的 `setIs…:` setter。[`CHANGELOG.md`](CHANGELOG.md) 列出四組對照。
 
 **公開表面由兩份基準釘住**：`Scripts/api/` 下 Swift 與 Objective-C 各一份。`Scripts/check-public-api.sh` 每次都拿建置結果與它們比對，任何增刪都會讓 CI 轉紅，直到有意地重新產生基準為止（見[開發](#開發)）。
 

@@ -714,7 +714,7 @@ The fix is to promote the main scroll view to `.always`. **Promote only the main
 
 Minor versions only add API, patch versions only fix bugs, and breaking changes go into the next major version.
 
-**2.1.0 is the one exception so far.** It renames four Objective-C property names to UIKit's `getter=is…` convention — `interactivePopGestureEnabled` and `scrollEdgeEffectEnabled` on `TeroNavigationContainer`, and `enabled` on `TeroTabItem` and `TeroTabActionItem` — while the Swift names stay the same. Reading through the old name still compiles; assigning through it does not, and the compiler names the missing `setIs…:` setter at each call site. The release notes list all four.
+**2.1.0 is the one exception so far.** It renames four Objective-C property names to UIKit's `getter=is…` convention — `interactivePopGestureEnabled` and `scrollEdgeEffectEnabled` on `TeroNavigationContainer`, and `enabled` on `TeroTabItem` and `TeroTabActionItem` — while the Swift names stay the same. Reading through the old name still compiles; assigning through it does not, and the compiler names the missing `setIs…:` setter at each call site. [`CHANGELOG.md`](CHANGELOG.md) lists all four.
 
 **The public surface is pinned by two baselines** under `Scripts/api/`, one for Swift and one for Objective-C. `Scripts/check-public-api.sh` compares every build against them, so any addition or removal turns CI red until the baselines are regenerated on purpose (see [Development](#development)).
 
