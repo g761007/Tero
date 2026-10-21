@@ -249,6 +249,20 @@ public final class TeroNavigationBar: UIView {
         didSet { applyButtonTitleColor() }
     }
 
+    /// 合成返回鍵的圖示。`nil`（預設）用 SF Symbol `chevron.backward`。
+    ///
+    /// 套件不夾帶資源，預設一律是系統符號（ADR-0007）；但採用者多半有自己的返回箭頭，
+    /// 而合成的返回鍵呼叫端拿不到，沒有這個屬性就只能事後去翻 `leadingItems` 換圖。
+    ///
+    /// 圖照鏡射 `UIBarButtonItem` 的規則畫：`.automatic` 的非 symbol 圖轉成 template、
+    /// 吃 `tintColor`；`.alwaysOriginal` 照原色。按鈕大小跟著圖走，所以畫布就是按鈕的
+    /// 大小——要與 44pt 的圖示按鈕一致，就給 44×44、圖形置中的圖。
+    ///
+    /// 設定當下會套到已經畫出來的返回鍵。
+    @objc public var backButtonImage: UIImage? {
+        didSet { navigationItemMirror?.sync() }
+    }
+
     /// 要不要畫內建的底。預設 `true`。
     ///
     /// 關掉之後這個導覽列完全透明，底由你自己負責——例如依捲動進度淡入一層。

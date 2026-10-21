@@ -718,6 +718,65 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
         XCTAssertEqual(bar.leadingItems.count, 2, "說了補在旁邊，返回鍵才回來")
     }
 
+    // MARK: - 返回鍵的圖示
+
+    /// 只有合成的返回鍵。不放進視窗，理由同 `barShowing(_:)`。
+    private func barWithBackButton(_ image: UIImage?) -> TeroNavigationBar {
+        let bar = TeroNavigationBar(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
+        bar.defaultButtonMaterial = .plain
+        bar.showsBackdrop = false
+        bar.tintColor = .blue
+        bar.backButtonImage = image
+        bar.bind(to: UINavigationItem(title: ""), backAction: {})
+        return bar
+    }
+
+    private func backImage(in bar: TeroNavigationBar) throws -> UIImage? {
+        try XCTUnwrap(bar.leadingItems.first as? UIButton).image(for: .normal)
+    }
+
+    func test_withoutAnImageTheBackButtonIsTheSymbol() throws {
+        let bar = barWithBackButton(nil)
+
+        XCTAssertEqual(try backImage(in: bar), UIImage(systemName: "chevron.backward"), "ADR-0007：預設一律是系統符號")
+    }
+
+    /// 合成的返回鍵呼叫端拿不到，圖只能交給 bar；與 bar item 同一條規則，`.automatic` 吃 tint。
+    func test_anImageSetBeforeBindingIsDrawnWithTheTint() {
+        let counts = colourCounts(of: barWithBackButton(solidImage(.red)))
+
+        XCTAssertEqual(counts.red, 0, "不該照原色畫")
+        XCTAssertGreaterThan(counts.blue, 0, "要畫成 bar 的 tint")
+    }
+
+    func test_anAlwaysOriginalBackImageKeepsItsColours() {
+        let counts = colourCounts(of: barWithBackButton(solidImage(.red).withRenderingMode(.alwaysOriginal)))
+
+        XCTAssertGreaterThan(counts.red, 0)
+        XCTAssertEqual(counts.blue, 0)
+    }
+
+    /// bind 之後才設：已經畫出來的那一顆換圖，target 與材質都留著，不是換一顆新的。
+    ///
+    /// 用 `.alwaysOriginal` 的紅色量：預設的 symbol 也吃 tint，只看藍色分不出有沒有換。
+    func test_anImageSetAfterBindingReplacesTheImageOfTheSameButton() throws {
+        let bar = barWithBackButton(nil)
+        let before = try XCTUnwrap(bar.leadingItems.first)
+
+        bar.backButtonImage = solidImage(.red).withRenderingMode(.alwaysOriginal)
+
+        XCTAssertIdentical(bar.leadingItems.first, before)
+        XCTAssertGreaterThan(colourCounts(of: bar).red, 0)
+    }
+
+    func test_settingTheImageBackToNilRestoresTheSymbol() throws {
+        let bar = barWithBackButton(solidImage(.red))
+
+        bar.backButtonImage = nil
+
+        XCTAssertEqual(try backImage(in: bar), UIImage(systemName: "chevron.backward"))
+    }
+
     // MARK: - 解除
 
     func test_unbindingStopsTheSync() throws {

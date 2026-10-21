@@ -1,4 +1,5 @@
   TeroNavigationBar.applyCollapseProgress:
+  TeroNavigationBar.backButtonImage
   TeroNavigationBar.bindToNavigationItem:backAction:
   TeroNavigationBar.buttonTitleColor
   TeroNavigationBar.defaultButtonMaterial

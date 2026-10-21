@@ -22,6 +22,9 @@ internal final class TeroNavigationItemMirror: NSObject {
     /// 執行期換掉某一顆時只有那一顆重建。
     private var views: [ObjectIdentifier: (item: UIBarButtonItem, view: UIView)] = [:]
     private var backButton: TeroNavigationButton?
+    /// `backButton` 現在畫的是哪一張 `backButtonImage`（nil 是預設的 symbol）。要不要換圖
+    /// 比的是這個：轉成 template 的圖每次都是新的一張，拿畫出來的圖比身分永遠不同。
+    private var backButtonSource: UIImage?
 
     internal init(bar: TeroNavigationBar, item: UINavigationItem, backAction: (() -> Void)?) {
         self.bar = bar
@@ -56,7 +59,8 @@ internal final class TeroNavigationItemMirror: NSObject {
         let rightItems = item.rightBarButtonItems ?? []
 
         var leading: [UIView] = []
-        if let back = resolvedBackButton(leftItems: leftItems, canNavigateBack: bar.canNavigateBack) {
+        if let back = resolvedBackButton(leftItems: leftItems, canNavigateBack: bar.canNavigateBack,
+                                         customImage: bar.backButtonImage) {
             leading.append(back)
         }
         leading.append(contentsOf: leftItems.map(view(for:)))
@@ -75,20 +79,32 @@ internal final class TeroNavigationItemMirror: NSObject {
 
     /// 合成的返回鍵：有動作可接、有上一頁可以回去、頁面沒有藏返回鍵、而且沒有自己的
     /// left items（除非它說 left items 是補在返回鍵旁邊的）。
-    private func resolvedBackButton(leftItems: [UIBarButtonItem], canNavigateBack: Bool) -> TeroNavigationButton? {
+    private func resolvedBackButton(leftItems: [UIBarButtonItem], canNavigateBack: Bool,
+                                    customImage: UIImage?) -> TeroNavigationButton? {
         guard backAction != nil, canNavigateBack, !item.hidesBackButton,
               leftItems.isEmpty || item.leftItemsSupplementBackButton else {
             backButton = nil
             return nil
         }
-        if let backButton { return backButton }
-        // 預設圖示一律用 SF Symbols（ADR-0007）。
+        if let backButton {
+            if customImage !== backButtonSource {
+                backButton.setImage(Self.backImage(customImage), for: .normal)
+                backButtonSource = customImage
+            }
+            return backButton
+        }
         // 材質同上：建成 `.automatic`，由導覽列統一套。
-        let button = TeroNavigationButton(image: UIImage(systemName: "chevron.backward"), material: .automatic)
+        let button = TeroNavigationButton(image: Self.backImage(customImage), material: .automatic)
+        backButtonSource = customImage
         button.accessibilityLabel = item.backButtonTitle
         button.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         backButton = button
         return button
+    }
+
+    /// 預設圖示一律用 SF Symbols（ADR-0007）；採用者給了自己的圖，就照 bar item 的規則畫。
+    private static func backImage(_ customImage: UIImage?) -> UIImage? {
+        customImage.map(barImage) ?? UIImage(systemName: "chevron.backward")
     }
 
     @objc private func backTapped() {
