@@ -70,6 +70,7 @@
 @objc public protocol TeroTabVisibilityProviding: NSObjectProtocol
 @objc public static func defaultConfiguration() -> TeroTabBarConfiguration
 @objc public static let primaryHeight: CGFloat = 44
+@objc public var backButtonImage: UIImage?
 @objc public var buttonTitleColor: UIColor?
 @objc public var chromeCollapseDistance: CGFloat = 120
 @objc public var chromeScrollBehavior: TeroChromeScrollBehavior = .hidePrimary
