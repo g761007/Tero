@@ -2,6 +2,12 @@
 
 Notable changes to Tero, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and version numbers follow the rules in the README's [API stability](README.md#api-stability) section.
 
+## [2.1.1] - 2026-10-21
+
+### Added
+
+- `TeroNavigationBar.backButtonImage`: the icon of the synthesised back button. `nil`, the default, keeps the SF Symbol `chevron.backward`. The image is drawn by the same rule as a mirrored bar button item's image: `.automatic` takes the bar's tint and `.alwaysOriginal` keeps its own colours. Setting it also changes a back button that is already on screen.
+
 ## [2.1.0] - 2026-09-24
 
 ### Changed
@@ -29,5 +35,6 @@ Notable changes to Tero, newest first. The format follows [Keep a Changelog](htt
 
 First release from this repository.
 
+[2.1.1]: https://github.com/g761007/Tero/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/g761007/Tero/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/g761007/Tero/tree/2.0.0
