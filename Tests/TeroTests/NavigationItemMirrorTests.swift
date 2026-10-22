@@ -431,10 +431,10 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
 
     // MARK: - 圖片著色
 
-    private func solidImage(_ color: UIColor) -> UIImage {
-        UIGraphicsImageRenderer(size: CGSize(width: 22, height: 22)).image { context in
+    private func solidImage(_ color: UIColor, size: CGSize = CGSize(width: 22, height: 22)) -> UIImage {
+        UIGraphicsImageRenderer(size: size).image { context in
             color.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 22, height: 22))
+            context.fill(CGRect(origin: .zero, size: size))
         }
     }
 
@@ -775,6 +775,101 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
         bar.backButtonImage = nil
 
         XCTAssertEqual(try backImage(in: bar), UIImage(systemName: "chevron.backward"))
+    }
+
+    // MARK: - 返回鍵的大小
+
+    /// 先 `setNeedsLayout`：不在視窗裡的 view 樹，arranged subview 的 intrinsic size 變了
+    /// 不會讓根重新排版，bounds 停在上一次。純 UIKit 的 `UIButton` 換圖也一樣（實測 iOS 27.0）；
+    /// 放進視窗就會排。
+    private func laidOutBackButton(in bar: TeroNavigationBar) throws -> UIButton {
+        bar.setNeedsLayout()
+        bar.layoutIfNeeded()
+        return try XCTUnwrap(bar.leadingItems.first as? UIButton)
+    }
+
+    /// 只給 symbol 的話，按鈕大小就是 chevron 的大小，玻璃底縮成貼著它的小膠囊。
+    /// 原生的玻璃返回鍵是 44×44 的圓（實測 iOS 26.5 與 27.0）。
+    func test_theSymbolBackButtonIsAsLargeAsUIKitsGlassBackButton() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(nil))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+    }
+
+    /// 同一次實測，原生的 chevron 畫成 17×24、置中。symbol 的預設大小只有 13×17 左右。
+    func test_theSymbolBackButtonDrawsTheChevronAsLargeAsUIKit() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(nil))
+        let chevron = try XCTUnwrap(button.imageView).frame
+
+        XCTAssertEqual(chevron.width, 17, accuracy: 1)
+        XCTAssertEqual(chevron.height, 24, accuracy: 1)
+        XCTAssertEqual(chevron.midX, button.bounds.midX, accuracy: 0.5)
+        XCTAssertEqual(chevron.midY, button.bounds.midY, accuracy: 0.5)
+    }
+
+    /// 自己的圖與 bar item 同一條規則：比 44 小就置中在 44×44 裡。
+    func test_aSmallCustomBackImageSitsInTheSameSizeButton() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(solidImage(.red)))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+    }
+
+    /// 自己給的 symbol 也照 bar item 畫（medium），不是預設 chevron 的 semibold，也不是 symbol 的預設大小。
+    func test_aCustomSymbolBackImageIsDrawnLikeABarItemSymbol() throws {
+        let symbol = try XCTUnwrap(UIImage(systemName: "arrow.backward"))
+        let back = try laidOutBackButton(in: barWithBackButton(symbol))
+        let item = try laidOutTrailingButton(in: barShowing(symbol))
+
+        XCTAssertEqual(try XCTUnwrap(back.imageView).frame.size, try XCTUnwrap(item.imageView).frame.size)
+    }
+
+    /// 執行期換圖換的是同一顆按鈕：大的圖把它撐大，換回 symbol 時大小與 chevron 都要回來。
+    func test_switchingBetweenTheSymbolAndALargeCustomImageSwitchesTheSize() throws {
+        let bar = barWithBackButton(nil)
+
+        bar.backButtonImage = solidImage(.red, size: CGSize(width: 60, height: 50))
+        XCTAssertEqual(try laidOutBackButton(in: bar).bounds.size, CGSize(width: 60, height: 50))
+
+        bar.backButtonImage = nil
+        let button = try laidOutBackButton(in: bar)
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+        XCTAssertEqual(try XCTUnwrap(button.imageView).frame.height, 24, accuracy: 1)
+    }
+
+    // MARK: - 圖示按鈕的大小
+
+    private func laidOutTrailingButton(in bar: TeroNavigationBar) throws -> UIButton {
+        bar.setNeedsLayout()
+        bar.layoutIfNeeded()
+        return try XCTUnwrap(bar.trailingItems.first as? UIButton)
+    }
+
+    /// 原生單顆圖示 item 的玻璃底是 44×44 的圓，symbol 畫成 17pt medium、large scale
+    /// （實測 iOS 26.5 與 27.0；`plus.circle` 畫成 26×26）。只給 symbol 的話玻璃縮成 20×19 左右。
+    func test_aSymbolItemIsAsLargeAsUIKitsGlassButton() throws {
+        let button = try laidOutTrailingButton(in: barShowing(try XCTUnwrap(UIImage(systemName: "plus.circle"))))
+        let glyph = try XCTUnwrap(button.imageView).frame
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+        XCTAssertEqual(glyph.width, 26, accuracy: 1)
+        XCTAssertEqual(glyph.height, 26, accuracy: 1)
+        XCTAssertEqual(glyph.midX, button.bounds.midX, accuracy: 0.5)
+        XCTAssertEqual(glyph.midY, button.bounds.midY, accuracy: 0.5)
+    }
+
+    /// 原生的 22×22 PNG 一樣是 44×44 的玻璃圓，圖照原尺寸置中。
+    func test_aSmallImageItemSitsInTheSameSizeButton() throws {
+        let button = try laidOutTrailingButton(in: barShowing(solidImage(.red)))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+        XCTAssertEqual(try XCTUnwrap(button.imageView).frame.size, CGSize(width: 22, height: 22))
+    }
+
+    /// 44 是下限不是釘死：比它大的圖照圖的大小，與原生相同。
+    func test_anImageItemLargerThanTheButtonKeepsItsSize() throws {
+        let button = try laidOutTrailingButton(in: barShowing(solidImage(.red, size: CGSize(width: 60, height: 50))))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 60, height: 50))
     }
 
     // MARK: - 解除

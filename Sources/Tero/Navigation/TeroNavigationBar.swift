@@ -75,6 +75,14 @@ public final class TeroNavigationButton: UIButton {
     /// 文字按鈕的最小高度。
     private static let titleMinimumHeight: CGFloat = 36
 
+    /// 最小尺寸。鏡射畫圖示的按鈕（合成的返回鍵、有 image 的 bar item）是原生玻璃按鈕的 44×44。
+    ///
+    /// 走 intrinsic size 的理由同下：圖會在執行期換（`backButtonImage`、KVO 盯著的 `image`），
+    /// 比 44 大的圖要能把按鈕撐大。
+    internal var minimumSize: CGSize = .zero {
+        didSet { invalidateIntrinsicContentSize() }
+    }
+
     /// 文字按鈕要有留白與最小高度。
     ///
     /// 沒有的話 intrinsic size 就是文字本身的大小，而玻璃底又 round 到 `bounds.height / 2`
@@ -87,6 +95,8 @@ public final class TeroNavigationButton: UIButton {
     /// 的 constraint 蓋過 intrinsic size。
     public override var intrinsicContentSize: CGSize {
         var size = super.intrinsicContentSize
+        size.width = max(size.width, minimumSize.width)
+        size.height = max(size.height, minimumSize.height)
         guard image(for: .normal) == nil, currentTitle?.isEmpty == false else { return size }
         size.width += Self.titleHorizontalPadding * 2
         size.height = max(size.height, Self.titleMinimumHeight)
@@ -249,14 +259,15 @@ public final class TeroNavigationBar: UIView {
         didSet { applyButtonTitleColor() }
     }
 
-    /// 合成返回鍵的圖示。`nil`（預設）用 SF Symbol `chevron.backward`。
+    /// 合成返回鍵的圖示。`nil`（預設）用 SF Symbol `chevron.backward`，大小比照原生的玻璃
+    /// 返回鍵：44×44 的按鈕、17pt semibold 的 chevron。
     ///
     /// 套件不夾帶資源，預設一律是系統符號（ADR-0007）；但採用者多半有自己的返回箭頭，
     /// 而合成的返回鍵呼叫端拿不到，沒有這個屬性就只能事後去翻 `leadingItems` 換圖。
     ///
     /// 圖照鏡射 `UIBarButtonItem` 的規則畫：`.automatic` 的非 symbol 圖轉成 template、
-    /// 吃 `tintColor`；`.alwaysOriginal` 照原色。按鈕大小跟著圖走，所以畫布就是按鈕的
-    /// 大小——要與 44pt 的圖示按鈕一致，就給 44×44、圖形置中的圖。
+    /// 吃 `tintColor`；`.alwaysOriginal` 照原色。大小也一樣：按鈕至少 44×44，比它小的圖
+    /// 置中，比它大的照圖的大小。
     ///
     /// 設定當下會套到已經畫出來的返回鍵。
     @objc public var backButtonImage: UIImage? {
@@ -314,7 +325,7 @@ public final class TeroNavigationBar: UIView {
     /// 頁面照舊寫 `navigationItem.title`／`titleView`／`leftBarButtonItems`／`rightBarButtonItems`／
     /// `hidesBackButton`，這裡讀出來畫，之後以 KVO 持續同步——執行期換按鈕、換標題都會跟上。
     /// `UIBarButtonItem` 變成 `TeroNavigationButton`（`.automatic` 材質；Plain 17pt regular、
-    /// Done 17pt semibold），`customView` 直接沿用。
+    /// Done 17pt semibold；有 image 的至少 44×44、symbol 17pt medium），`customView` 直接沿用。
     ///
     /// `backAction` 非 nil、有上一頁可以回去、頁面沒有 `hidesBackButton`、也沒有自己的
     /// left items 時合成一顆返回鍵。「有沒有上一頁」在容器裡由容器判斷，root 沒有返回鍵，
