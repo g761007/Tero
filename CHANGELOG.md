@@ -2,6 +2,13 @@
 
 Notable changes to Tero, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and version numbers follow the rules in the README's [API stability](README.md#api-stability) section.
 
+## [2.1.2] - 2026-10-22
+
+### Changed
+
+- The synthesised back button and mirrored image bar button items are as large as UIKit's glass bar buttons: at least 44×44, with an SF Symbol drawn at 17pt and large scale — semibold for the default back chevron, medium otherwise. Before, a button was only as large as its image, so the glass shrank to a small capsule around it. An image larger than 44×44 still sets the size, and a symbol's own point size still wins. Text items and `customView`s are unchanged.
+- A `backButtonImage` smaller than 44×44 now sits centred in a 44×44 button, as a bar button item's image does, instead of setting the button's size.
+
 ## [2.1.1] - 2026-10-21
 
 ### Added
@@ -35,6 +42,7 @@ Notable changes to Tero, newest first. The format follows [Keep a Changelog](htt
 
 First release from this repository.
 
+[2.1.2]: https://github.com/g761007/Tero/compare/2.1.1...2.1.2
 [2.1.1]: https://github.com/g761007/Tero/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/g761007/Tero/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/g761007/Tero/tree/2.0.0
