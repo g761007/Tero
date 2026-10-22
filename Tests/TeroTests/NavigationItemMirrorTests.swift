@@ -777,6 +777,54 @@ final class NavigationItemMirrorTests: TeroTabBarControllerTestCase {
         XCTAssertEqual(try backImage(in: bar), UIImage(systemName: "chevron.backward"))
     }
 
+    // MARK: - 返回鍵的大小
+
+    /// 先 `setNeedsLayout`：不在視窗裡的 view 樹，arranged subview 的 intrinsic size 變了
+    /// 不會讓根重新排版，bounds 停在上一次。純 UIKit 的 `UIButton` 換圖也一樣（實測 iOS 27.0）；
+    /// 放進視窗就會排。
+    private func laidOutBackButton(in bar: TeroNavigationBar) throws -> UIButton {
+        bar.setNeedsLayout()
+        bar.layoutIfNeeded()
+        return try XCTUnwrap(bar.leadingItems.first as? UIButton)
+    }
+
+    /// 只給 symbol 的話，按鈕大小就是 chevron 的大小，玻璃底縮成貼著它的小膠囊。
+    /// 原生的玻璃返回鍵是 44×44 的圓（實測 iOS 26.5 與 27.0）。
+    func test_theSymbolBackButtonIsAsLargeAsUIKitsGlassBackButton() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(nil))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 44, height: 44))
+    }
+
+    /// 同一次實測，原生的 chevron 畫成 17×24、置中。symbol 的預設大小只有 13×17 左右。
+    func test_theSymbolBackButtonDrawsTheChevronAsLargeAsUIKit() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(nil))
+        let chevron = try XCTUnwrap(button.imageView).frame
+
+        XCTAssertEqual(chevron.width, 17, accuracy: 1)
+        XCTAssertEqual(chevron.height, 24, accuracy: 1)
+        XCTAssertEqual(chevron.midX, button.bounds.midX, accuracy: 0.5)
+        XCTAssertEqual(chevron.midY, button.bounds.midY, accuracy: 0.5)
+    }
+
+    /// 自己的圖不釘成 44：`backButtonImage` 的文件說畫布就是按鈕的大小。
+    func test_aCustomBackImageKeepsItsOwnSize() throws {
+        let button = try laidOutBackButton(in: barWithBackButton(solidImage(.red)))
+
+        XCTAssertEqual(button.bounds.size, CGSize(width: 22, height: 22))
+    }
+
+    /// 執行期換圖換的是同一顆按鈕，44×44 要跟著放掉、再釘回來。
+    func test_switchingBetweenTheSymbolAndACustomImageSwitchesTheSize() throws {
+        let bar = barWithBackButton(nil)
+
+        bar.backButtonImage = solidImage(.red)
+        XCTAssertEqual(try laidOutBackButton(in: bar).bounds.size, CGSize(width: 22, height: 22))
+
+        bar.backButtonImage = nil
+        XCTAssertEqual(try laidOutBackButton(in: bar).bounds.size, CGSize(width: 44, height: 44))
+    }
+
     // MARK: - 解除
 
     func test_unbindingStopsTheSync() throws {

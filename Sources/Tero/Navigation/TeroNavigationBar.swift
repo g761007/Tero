@@ -75,6 +75,14 @@ public final class TeroNavigationButton: UIButton {
     /// 文字按鈕的最小高度。
     private static let titleMinimumHeight: CGFloat = 36
 
+    /// 最小尺寸。合成的返回鍵畫預設 symbol 時是原生玻璃返回鍵的 44×44。
+    ///
+    /// 走 intrinsic size 的理由同下：返回鍵的圖會在執行期換（`backButtonImage`），換成採用者
+    /// 的圖時大小要回到跟著圖走。
+    internal var minimumSize: CGSize = .zero {
+        didSet { invalidateIntrinsicContentSize() }
+    }
+
     /// 文字按鈕要有留白與最小高度。
     ///
     /// 沒有的話 intrinsic size 就是文字本身的大小，而玻璃底又 round 到 `bounds.height / 2`
@@ -87,6 +95,8 @@ public final class TeroNavigationButton: UIButton {
     /// 的 constraint 蓋過 intrinsic size。
     public override var intrinsicContentSize: CGSize {
         var size = super.intrinsicContentSize
+        size.width = max(size.width, minimumSize.width)
+        size.height = max(size.height, minimumSize.height)
         guard image(for: .normal) == nil, currentTitle?.isEmpty == false else { return size }
         size.width += Self.titleHorizontalPadding * 2
         size.height = max(size.height, Self.titleMinimumHeight)
@@ -249,7 +259,8 @@ public final class TeroNavigationBar: UIView {
         didSet { applyButtonTitleColor() }
     }
 
-    /// 合成返回鍵的圖示。`nil`（預設）用 SF Symbol `chevron.backward`。
+    /// 合成返回鍵的圖示。`nil`（預設）用 SF Symbol `chevron.backward`，大小比照原生的玻璃
+    /// 返回鍵：44×44 的按鈕、17pt semibold 的 chevron。
     ///
     /// 套件不夾帶資源，預設一律是系統符號（ADR-0007）；但採用者多半有自己的返回箭頭，
     /// 而合成的返回鍵呼叫端拿不到，沒有這個屬性就只能事後去翻 `leadingItems` 換圖。

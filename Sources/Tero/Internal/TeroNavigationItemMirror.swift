@@ -88,23 +88,39 @@ internal final class TeroNavigationItemMirror: NSObject {
         }
         if let backButton {
             if customImage !== backButtonSource {
-                backButton.setImage(Self.backImage(customImage), for: .normal)
-                backButtonSource = customImage
+                setBackImage(customImage, on: backButton)
             }
             return backButton
         }
         // 材質同上：建成 `.automatic`，由導覽列統一套。
-        let button = TeroNavigationButton(image: Self.backImage(customImage), material: .automatic)
-        backButtonSource = customImage
+        let button = TeroNavigationButton(image: nil, material: .automatic)
+        setBackImage(customImage, on: button)
         button.accessibilityLabel = item.backButtonTitle
         button.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         backButton = button
         return button
     }
 
-    /// 預設圖示一律用 SF Symbols（ADR-0007）；採用者給了自己的圖，就照 bar item 的規則畫。
-    private static func backImage(_ customImage: UIImage?) -> UIImage? {
-        customImage.map(barImage) ?? UIImage(systemName: "chevron.backward")
+    /// 原生玻璃返回鍵的大小。實測（iOS 26.5 與 27.0）`UINavigationController` 的返回鍵是
+    /// 44×44 的玻璃圓。
+    private static let backButtonSize = CGSize(width: 44, height: 44)
+
+    /// 同一次實測的 chevron：semibold、large scale，字級是 body（17pt）。這裡固定 17pt 不跟
+    /// Dynamic Type，與鏡射的文字按鈕寫死 17pt 同一個理由（ADR-0006 的部分跟隨）。
+    private static let backSymbolConfiguration = UIImage.SymbolConfiguration(
+        pointSize: 17, weight: .semibold, scale: .large)
+
+    /// 預設圖示一律用 SF Symbols（ADR-0007），畫成原生玻璃返回鍵的樣子。只給 symbol 的話，
+    /// 按鈕大小就是 symbol 的大小，玻璃底縮成貼著 chevron 的小膠囊。
+    ///
+    /// 採用者給了自己的圖就照 bar item 的規則畫，大小跟著圖走——`backButtonImage` 的文件
+    /// 是這樣說的。
+    private func setBackImage(_ customImage: UIImage?, on button: TeroNavigationButton) {
+        let usesSymbol = (customImage == nil)
+        button.setImage(customImage.map(Self.barImage) ?? UIImage(systemName: "chevron.backward"), for: .normal)
+        button.setPreferredSymbolConfiguration(usesSymbol ? Self.backSymbolConfiguration : nil, forImageIn: .normal)
+        button.minimumSize = usesSymbol ? Self.backButtonSize : .zero
+        backButtonSource = customImage
     }
 
     @objc private func backTapped() {
