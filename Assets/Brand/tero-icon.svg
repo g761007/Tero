@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc"><title id="title">Tero Icon</title><desc id="desc">Rounded deep-blue app tile containing a cyan, violet, pink, and peach translucent ribbon letter T.</desc>
+<defs>
+  <linearGradient id="tero-background" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0758ba"/><stop offset=".21" stop-color="#0b286f"/><stop offset=".46" stop-color="#080e35"/><stop offset=".76" stop-color="#120a35"/><stop offset="1" stop-color="#391037"/></linearGradient>
+  <radialGradient id="tero-azure-bloom" cx="0" cy="0" r="1" gradientTransform="translate(67 27) rotate(38) scale(378 330)" gradientUnits="userSpaceOnUse"><stop stop-color="#058cfa" stop-opacity=".67"/><stop offset=".36" stop-color="#034fbd" stop-opacity=".30"/><stop offset="1" stop-color="#002c9f" stop-opacity="0"/></radialGradient>
+  <radialGradient id="tero-violet-bloom" cx="0" cy="0" r="1" gradientTransform="translate(448 452) rotate(-132) scale(310 315)" gradientUnits="userSpaceOnUse"><stop stop-color="#b319a1" stop-opacity=".38"/><stop offset=".53" stop-color="#830c9a" stop-opacity=".14"/><stop offset="1" stop-color="#6724df" stop-opacity="0"/></radialGradient>
+  <linearGradient id="tero-rim" x1="5" y1="38" x2="477" y2="502" gradientUnits="userSpaceOnUse"><stop stop-color="#12daff"/><stop offset=".26" stop-color="#0077ff"/><stop offset=".56" stop-color="#4e35f5"/><stop offset=".78" stop-color="#831bd1"/><stop offset="1" stop-color="#f33e9e"/></linearGradient>
+  <linearGradient id="tero-bar" x1="70" y1="178" x2="450" y2="178" gradientUnits="userSpaceOnUse"><stop stop-color="#4afaff"/><stop offset=".20" stop-color="#03b9ff"/><stop offset=".48" stop-color="#226bf7"/><stop offset=".69" stop-color="#6944fa"/><stop offset=".85" stop-color="#c74ef4"/><stop offset="1" stop-color="#ff9da2"/></linearGradient>
+  <linearGradient id="tero-bar-face" x1="257" y1="127" x2="257" y2="244" gradientUnits="userSpaceOnUse"><stop stop-color="#f0ffff" stop-opacity=".47"/><stop offset=".25" stop-color="#d5f4ff" stop-opacity=".16"/><stop offset=".52" stop-color="#226afa" stop-opacity=".03"/><stop offset="1" stop-color="#0d50d9" stop-opacity=".25"/></linearGradient>
+  <linearGradient id="tero-stem" x1="172" y1="165" x2="342" y2="465" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8cdaff"/><stop offset=".18" stop-color="#7665fc"/><stop offset=".43" stop-color="#9a31f4"/><stop offset=".67" stop-color="#c735e8"/><stop offset=".82" stop-color="#f74fbd"/><stop offset="1" stop-color="#ffb276"/></linearGradient>
+  <linearGradient id="tero-stem-edge" x1="178" y1="235" x2="264" y2="469" gradientUnits="userSpaceOnUse"><stop stop-color="#bd8aff" stop-opacity=".85"/><stop offset=".55" stop-color="#fd7df3" stop-opacity=".52"/><stop offset="1" stop-color="#ffcfba" stop-opacity=".70"/></linearGradient>
+  <linearGradient id="tero-stem-bot" x1="231" y1="388" x2="295" y2="459" gradientUnits="userSpaceOnUse"><stop stop-color="#e73bcf" stop-opacity="0"/><stop offset=".68" stop-color="#ff648d" stop-opacity=".68"/><stop offset="1" stop-color="#ffd785" stop-opacity="1"/></linearGradient>
+  <linearGradient id="tero-prism" x1="289" y1="125" x2="405" y2="246" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#91b8ff" stop-opacity=".14"/><stop offset=".31" stop-color="#df70ff" stop-opacity=".57"/><stop offset=".64" stop-color="#f97ac8" stop-opacity=".25"/><stop offset="1" stop-color="#ffc19d" stop-opacity=".28"/></linearGradient>
+  <linearGradient id="tero-highlight" x1="286" y1="121" x2="399" y2="188" gradientUnits="userSpaceOnUse"><stop stop-color="#e5ecff" stop-opacity=".62"/><stop offset=".40" stop-color="#fdf6ff" stop-opacity=".24"/><stop offset="1" stop-color="#ffe8ff" stop-opacity=".04"/></linearGradient>
+  <radialGradient id="tero-cap-warm" cx="430" cy="222" r="128" gradientUnits="userSpaceOnUse"><stop stop-color="#ffbe8e" stop-opacity="1"/><stop offset=".28" stop-color="#ff8ab0" stop-opacity=".95"/><stop offset=".68" stop-color="#fa4bc6" stop-opacity=".40"/><stop offset="1" stop-color="#fa4bc6" stop-opacity="0"/></radialGradient>
+  <radialGradient id="tero-tip-warm" cx="279" cy="451" r="114" gradientUnits="userSpaceOnUse"><stop stop-color="#ffe69b" stop-opacity="1"/><stop offset=".25" stop-color="#ffac7b" stop-opacity=".94"/><stop offset=".58" stop-color="#ff57a4" stop-opacity=".70"/><stop offset="1" stop-color="#ff57a4" stop-opacity="0"/></radialGradient>
+  <linearGradient id="tero-prism-face" x1="188" y1="335" x2="314" y2="353" gradientUnits="userSpaceOnUse"><stop stop-color="#9b4efa" stop-opacity=".04"/><stop offset=".22" stop-color="#cf49ed" stop-opacity=".68"/><stop offset=".62" stop-color="#f340c6" stop-opacity=".84"/><stop offset="1" stop-color="#ff65b0" stop-opacity=".55"/></linearGradient>
+  <linearGradient id="tero-silver" x1="0" y1="50" x2="0" y2="215" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset=".52" stop-color="#fff"/><stop offset="1" stop-color="#dce5ff"/></linearGradient>
+  <filter id="tero-glow" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="tero-rim-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>
+  <clipPath id="tero-mask"><rect x="3" y="3" width="506" height="506" rx="128"/></clipPath>
+  <clipPath id="tero-bar-clip"><path d="M129 128 H392 C424 128 448 152 448 182 C448 213 425 237 392 237 H129 C97 237 74 213 74 183 C74 152 98 128 129 128 Z"/></clipPath>
+  <clipPath id="tero-stem-clip"><path d="M184 413 V286 C184 230 222 196 278 193 C299 192 307 177 318 157 C331 138 356 128 383 128 H392 C424 128 448 152 448 182 C448 213 425 237 393 237 H339 C317 237 307 251 307 273 V414 C307 444 279 459 245 459 C210 459 184 440 184 413 Z"/></clipPath>
+ </defs>
+<g aria-label="Tero gradient-glass T">
+<!-- Subtle squared app tile, blue at top-left and magenta toward lower-right -->
+<rect x="3" y="3" width="506" height="506" rx="128" fill="url(#tero-background)"/>
+<g clip-path="url(#tero-mask)"><rect width="512" height="512" fill="url(#tero-azure-bloom)"/><rect width="512" height="512" fill="url(#tero-violet-bloom)"/></g>
+<!-- Beveled multicolor outline; glow stays understated so it scales down cleanly -->
+<rect x="5" y="5" width="502" height="502" rx="126" fill="none" stroke="url(#tero-rim)" stroke-width="7" opacity=".25" filter="url(#tero-rim-glow)"/>
+<rect x="3" y="3" width="506" height="506" rx="128" fill="none" stroke="url(#tero-rim)" stroke-width="4"/>
+<!-- Horizontal cyan-blue-violet ribbon, behind the returning stem -->
+<path d="M129 128 H392 C424 128 448 152 448 182 C448 213 425 237 392 237 H129 C97 237 74 213 74 183 C74 152 98 128 129 128 Z" fill="url(#tero-bar)"/>
+<path d="M129 128 H392 C424 128 448 152 448 182 C448 213 425 237 392 237 H129 C97 237 74 213 74 183 C74 152 98 128 129 128 Z" fill="url(#tero-bar-face)"/>
+<!-- Material depth along the upper edge, not a solid white stroke -->
+<g clip-path="url(#tero-bar-clip)">
+<path d="M92 172 C98 150 113 143 139 143 H381 C413 143 430 157 439 177 C424 163 403 158 378 158 H139 C117 158 101 163 92 172 Z" fill="#f0ffff" opacity=".18"/>
+<path d="M81 192 C105 215 151 218 187 209 H393 C419 208 434 199 442 184" fill="none" stroke="#2449e6" stroke-width="20" opacity=".17"/>
+</g>
+<!-- On-top curling ribbon, purple glass across the horizontal band -->
+<path d="M184 413 V286 C184 230 222 196 278 193 C299 192 307 177 318 157 C331 138 356 128 383 128 H392 C424 128 448 152 448 182 C448 213 425 237 393 237 H339 C317 237 307 251 307 273 V414 C307 444 279 459 245 459 C210 459 184 440 184 413 Z" fill="url(#tero-stem)"/>
+<g clip-path="url(#tero-stem-clip)">
+<!-- lavender edge follows the inside of the corner for realistic curved glass -->
+<path d="M197 421 V289 C197 240 228 211 278 208 C307 206 326 184 334 166" fill="none" stroke="url(#tero-stem-edge)" stroke-width="17" opacity=".48"/>
+<path d="M305 261 C322 230 348 221 379 221 H440 L452 158 C436 174 418 179 396 179 H351 C316 179 287 196 268 224 Z" fill="#dd6cff" opacity=".16"/>
+<path d="M220 417 V293 C220 258 239 230 276 222 C294 218 308 222 330 232 C311 240 297 260 297 288 V415 C297 445 275 457 246 457 C231 457 225 438 220 417 Z" fill="url(#tero-prism-face)" opacity=".83"/>
+<rect x="163" y="347" width="168" height="145" fill="url(#tero-tip-warm)" opacity=".90"/>
+<rect x="320" y="140" width="166" height="141" fill="url(#tero-cap-warm)" opacity=".95"/>
+<path d="M218 431 C228 454 263 462 285 447" fill="none" stroke="#ffe4b3" stroke-width="8" opacity=".17"/>
+<!-- right glass pane, diagonal and translucent -->
+<path d="M274 193 C299 187 310 168 318 157 C334 136 352 128 387 128 H405 C433 133 448 155 448 184 C447 211 429 228 407 235 C403 203 389 182 357 181 C326 180 300 186 274 193Z" fill="url(#tero-prism)"/>
+<path d="M314 171 C330 140 354 131 386 131 H400" fill="none" stroke="url(#tero-highlight)" stroke-width="5.5" stroke-linecap="round" opacity=".65"/>
+<path d="M195 300 C195 243 226 211 279 206" fill="none" stroke="#f0c2ff" stroke-width="4" stroke-linecap="round" opacity=".26"/>
+</g>
+<!-- Glass intersection band overlays both ribbons at the crossing -->
+<path d="M283 192 C309 182 310 166 319 154 C336 133 352 128 383 128 H393 C427 128 448 151 448 183 C448 212 425 237 391 237 H326 C319 216 304 202 283 192Z" fill="url(#tero-prism)" opacity=".39"/>
+</g>
+</svg>
