@@ -1,28 +1,140 @@
-# Tero
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Assets/Brand/tero-horizontal-tagline.svg">
+    <source media="(prefers-color-scheme: light)" srcset="Assets/Brand/tero-horizontal-tagline-light.svg">
+    <img src="Assets/Brand/tero-horizontal-tagline-light.svg" alt="Tero — Navigation, on Your Terms." width="440">
+  </picture>
+</p>
 
-**English** · [繁體中文](README.zh-Hant.md)
+<p align="center">
+  <b>A fully customizable tab bar and navigation framework for iOS.</b><br>
+  Built for complete control, fluid interactions, and Liquid Glass.
+</p>
 
-A hand-built tab bar and navigation container for iOS, replacing `UITabBarController` and `UINavigationController`.
+<p align="center">
+  <a href="https://github.com/g761007/Tero/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/g761007/Tero/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <img alt="Swift 6.2+" src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white">
+  <img alt="iOS 15.0+" src="https://img.shields.io/badge/iOS-15.0%2B-007AFF?logo=apple&logoColor=white">
+  <img alt="Swift and Objective-C" src="https://img.shields.io/badge/API-Swift%20%7C%20Objective--C-5856D6">
+  <a href="#installation"><img alt="Swift Package Manager and CocoaPods" src="https://img.shields.io/badge/install-SPM%20%7C%20CocoaPods-34C759"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-8E8E93"></a>
+</p>
 
-It does not exist to make a prettier tab bar. It exists so that **tab navigation behaves the way this package decides, not the way the OS version decides**. `UITabBarController` was reworked substantially in iOS 18 and again in iOS 26, and each time existing apps had to go back and adjust. It also blocks two ordinary requirements: a tab icon can only be a `UIImage` — no Lottie, no SVGA, no animated avatar — and the tab bar has no room for a command button that is not a tab.
+<p align="center">
+  <b>English</b> · <a href="README.zh-Hant.md">繁體中文</a>
+</p>
 
-## What it does
+Tero replaces `UITabBarController` and `UINavigationController` with containers that draw their own bars, so your app's navigation looks and behaves the way you configure it — not the way the current iOS version decides. A tab can hold any `UIView`, the bar can carry commands that are not tabs, a transition can be redirected mid-flight, and the top chrome collapses as you scroll. It works from Swift and Objective-C, on iOS 15 and later, with no dependencies.
 
-- **A tab's content can be any `UIView`** — Lottie, SVGA, avatars, custom controls, injected through `TeroTabContentProvider`
-- **Two appearances**: Classic (flush to the bottom, full width) and FloatingGlass (floating, Liquid Glass)
-- **Action items** — a command that sits on the bar without being a tab, supported in both appearances
-- **Overflow and More** — items past the limit are collected automatically, and the limit follows `horizontalSizeClass`
-- **Badges** — dot and text styles, configured together and overridable per item
-- **One selection capsule that travels** — the whole bar has exactly one, and it moves continuously between tabs; on iOS 26 it is real glass and refracts what is behind it
-- **Interruptible transitions** — tapping another tab mid-animation turns immediately rather than queueing, and the bar stays usable throughout
-- **Continuous selection progress** — icons tint and cross-fade; Lottie and SVGA can read the 0…1 transition progress through `TeroTabInteractiveContentProvider`
-- **Swipe selection** — drag the capsule with your finger or flick left and right, off by default
-- **Scroll-driven collapse** — scroll down and the bar gets out of the way, scroll up and it returns, without taking over your `UIScrollViewDelegate`
-- **A hand-built navigation container** — one stack per tab; stack changes take effect synchronously and the animation is only the picture catching up. An interrupted transition settles the running segment to its endpoint rather than dropping it or queueing behind it
-- **Top chrome comes from the screen** — Tero asks for a `UIView` and a 0…1 collapse progress and knows nothing about titles or layout. When you want a title row plus a category row, `TeroNavigationBar` already has that structure
-- **Cancellable interactive pop** — driven by the edge gesture, and cancelling leaves the stack untouched
-- **Correct container behaviour** — view controller lifecycle, navigation stack retention, safe area, status bar, home indicator and screen-edge gesture deferral all forwarded
-- **Usable from both Swift and Objective-C**
+## Showcase
+
+<p align="center">
+  <img src="Assets/Screenshots/floating-glass.jpg" width="270" alt="A FloatingGlass tab bar with a separate add button over a colourful backdrop">
+  &nbsp;
+  <img src="Assets/Screenshots/badges.jpg" width="270" alt="A FloatingGlass tab bar with a 999+ badge, a dot badge and a standalone search button">
+  &nbsp;
+  <img src="Assets/Screenshots/dark.jpg" width="270" alt="A FloatingGlass tab bar over a dark backdrop">
+</p>
+
+<p align="center"><sub>FloatingGlass with an action item · text and dot badges beside a standalone search action · the same bar on a dark backdrop<br>
+Reference cases C, D and A from the Swift demo on the iOS 27 simulator, cropped to the bar.</sub></p>
+
+These, along with Classic, an Instagram-shaped reference app and a lab for tuning motion live, are in the [demo apps](#development):
+
+~~~bash
+cd Demo/SwiftDemo && xcodegen generate && open SwiftDemo.xcodeproj
+~~~
+
+## Why Tero?
+
+`UITabBarController` and `UINavigationController` are the right default for most apps. Tero is for the apps whose design asks for more than those containers were built to express:
+
+- **The look follows the OS.** `UITabBarController` was reworked substantially in iOS 18 and again in iOS 26, and each time, apps that had customised it went back to adjust.
+- **A tab is an image and a title.** A tab icon is a `UIImage`, so there is no room for Lottie, SVGA or an animated avatar.
+- **The bar only holds tabs.** A command that is not a tab, such as a centre "+" or a standalone search button, has nowhere to go.
+- **Top chrome is shaped by `UINavigationBar`.** A header whose title row and category row collapse separately as you scroll means working against the bar rather than with it.
+
+Tero draws both bars itself and never uses `UITabBar` or `UINavigationBar`. Which look you get is decided by `configuration.style`, not by the OS version; what a tab shows, how selection moves, how the bars react to scrolling and what the top chrome contains are yours to supply or configure. The work around them — view controller lifecycle, safe area, status bar, edge gestures — stays the container's job.
+
+## Features
+
+- **Fully customizable tab bar** — tint, item and badge appearance, a selection capsule whose shape, size, colour and material you choose, and visible-item limits per size class, with overflow collected into More automatically. Each screen can also ask for the bar to be hidden, or to use a different interface style, while it is on display.
+- **Classic & FloatingGlass** — a full-width bar flush with the bottom, or a floating Liquid Glass bar on iOS 26 and later, where the moving selection capsule is real glass that refracts what is behind it. Below iOS 26, FloatingGlass falls back to Classic rather than imitating glass with a blur; on iOS 26, Classic keeps its earlier look.
+- **Custom tab content (Lottie / SVGA / any `UIView`)** — a `TeroTabContentProvider` supplies the view. Adopt `TeroTabInteractiveContentProvider` and the view is driven by the 0…1 selection progress, so an animation goes exactly as far as the capsule has. Tero itself depends on neither Lottie nor SVGA.
+- **Action buttons & badges** — commands that sit on the bar without being tabs, in both styles; dot and text badges, configured together and overridable per item; a long press on a tab, reported to the delegate.
+- **Interactive & interruptible transitions** — one selection capsule travels between tabs as the icons tint and cross-fade with it, and a tap mid-flight turns it from where it is instead of queueing. Optionally, drag the capsule with a finger or flick between tabs. A stack change sent during a push or pop settles the running one rather than waiting behind it, and the edge-swipe pop can be cancelled without touching the stack.
+- **Scroll-aware navigation** — scrolling down minimises or hides the tab bar and collapses the top chrome; scrolling up brings them back. Tero reads your scroll view without taking over its delegate, and custom content receives the 0…1 collapse progress.
+- **Custom navigation container** — `TeroNavigationContainer` keeps one stack per tab and applies stack changes synchronously, with the animation only catching up. The top chrome is any `UIView` the screen supplies; `TeroNavigationBar` is a ready-made title row plus secondary row that can also mirror an existing `UINavigationItem`. Lifecycle, stack retention, safe area, status bar, home indicator and edge-gesture deferral are all forwarded.
+- **Swift & Objective-C** — one API for both, installed through Swift Package Manager, CocoaPods from git, or a source drop. No dependencies and no resource files.
+
+## Quick start
+
+Add the package to `Package.swift`, or through Xcode's **File › Add Package Dependencies…**:
+
+~~~swift
+.package(url: "https://github.com/g761007/Tero.git", from: "2.1.2")
+~~~
+
+Then build the tabs and set the result as your window's `rootViewController`:
+
+~~~swift
+import Tero
+import UIKit
+
+func makeRootViewController() -> UIViewController {
+    let configuration = TeroTabBarConfiguration.defaultConfiguration()
+    configuration.style = .floatingGlass   // falls back to .classic below iOS 26
+
+    let tabController = TeroTabBarController(configuration: configuration)
+    tabController.setTabs([
+        TeroTab(
+            identifier: "home",
+            viewController: TeroNavigationContainer(rootViewController: HomeViewController()),
+            item: TeroTabItem(title: "Home", image: UIImage(systemName: "house"),
+                              selectedImage: UIImage(systemName: "house.fill"))
+        ),
+        TeroTab(
+            identifier: "profile",
+            viewController: TeroNavigationContainer(rootViewController: ProfileViewController()),
+            item: TeroTabItem(title: "Profile", image: UIImage(systemName: "person"),
+                              selectedImage: UIImage(systemName: "person.fill"))
+        )
+    ], selectedIdentifier: "home", animated: false)
+    return tabController
+}
+
+// Top chrome comes from the screen: any UIView, or the ready-made TeroNavigationBar.
+final class HomeViewController: UIViewController, TeroNavigationChromeProviding {
+    func makeTeroNavigationChromeView() -> UIView {
+        let bar = TeroNavigationBar(frame: .zero)
+        bar.title = "Home"
+        return bar
+    }
+
+    var teroNavigationChromeHeight: CGFloat { TeroNavigationBar.primaryHeight }
+}
+
+final class ProfileViewController: UIViewController {}
+~~~
+
+Objective-C projects install through CocoaPods from git or a source drop and use the same classes; see [Installation](#installation) and the [Objective-C example](#objective-c).
+
+## Documentation
+
+The rest of this README is the full reference.
+
+| Topic | Sections |
+|---|---|
+| Compatibility | [Requirements](#requirements) |
+| Installation and Swift / Objective-C integration | [Installation](#installation) · [Swift](#swift) · [Objective-C](#objective-c) |
+| Tab customisation | [Custom tab content](#custom-tab-content) · [The selection capsule](#the-selection-capsule) · [Per-screen bar appearance](#per-screen-bar-appearance) |
+| Interactive transitions | [Transition motion](#transition-motion) · [Swipe selection](#swipe-selection) · [Long press](#long-press) |
+| Scroll-aware navigation | [Scroll-driven collapse](#scroll-driven-collapse) · [Collapsing](#collapsing) |
+| Navigation container | [Navigation container](#navigation-container) · [Top chrome](#top-chrome) · [Mirroring a `UINavigationItem`](#mirroring-a-uinavigationitem) |
+| Configuration | [Configuration](#configuration) |
+| Known limitations | [Known limitations](#known-limitations) · [Migrating from `UINavigationController`](#migrating-from-uinavigationcontroller) |
+| API stability | [API stability](#api-stability) · [Changelog](CHANGELOG.md) |
+| Contributing | [Development](#development) |
 
 ## Requirements
 

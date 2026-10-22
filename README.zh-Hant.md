@@ -1,28 +1,140 @@
-# Tero
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Assets/Brand/tero-horizontal-tagline.svg">
+    <source media="(prefers-color-scheme: light)" srcset="Assets/Brand/tero-horizontal-tagline-light.svg">
+    <img src="Assets/Brand/tero-horizontal-tagline-light.svg" alt="Tero — Navigation, on Your Terms." width="440">
+  </picture>
+</p>
 
-**繁體中文** · [English](README.md)
+<p align="center">
+  <b>完全可自訂的 iOS Tab Bar 與導覽框架。</b><br>
+  為完整的掌控、流暢的互動與 Liquid Glass 而設計。
+</p>
 
-自建的 iOS Tab Bar 與 Navigation 容器，取代 `UITabBarController` 與 `UINavigationController`。
+<p align="center">
+  <a href="https://github.com/g761007/Tero/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/g761007/Tero/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <img alt="Swift 6.2+" src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white">
+  <img alt="iOS 15.0+" src="https://img.shields.io/badge/iOS-15.0%2B-007AFF?logo=apple&logoColor=white">
+  <img alt="Swift 與 Objective-C" src="https://img.shields.io/badge/API-Swift%20%7C%20Objective--C-5856D6">
+  <a href="#安裝"><img alt="Swift Package Manager 與 CocoaPods" src="https://img.shields.io/badge/install-SPM%20%7C%20CocoaPods-34C759"></a>
+  <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/licence-MIT-8E8E93"></a>
+</p>
 
-它存在的理由不是「做一個更漂亮的 tab bar」，而是**讓 Tab 導覽的行為由這個套件決定，而不是由系統版本決定**。`UITabBarController` 在 iOS 18 與 iOS 26 連續兩次大幅改版，每次都迫使既有 App 回頭調整。此外它擋住兩類需求：Tab 圖示只能是 `UIImage`（塞不進 Lottie、SVGA、會動的頭像），以及 Tab Bar 上放不了獨立於 selection 之外的指令按鈕。
+<p align="center">
+  <b>繁體中文</b> · <a href="README.md">English</a>
+</p>
 
-## 能力
+Tero 以自己繪製 Bar 的容器取代 `UITabBarController` 與 `UINavigationController`，讓 App 的導覽長什麼樣子、怎麼運作，由你的設定決定，而不是由當下的 iOS 版本決定。Tab 可以放任意 `UIView`，Bar 上可以放不是 Tab 的指令按鈕，轉場進行中可以隨時改變方向，頂部 chrome 會隨捲動收合。Swift 與 Objective-C 都能用，支援 iOS 15 以上，沒有任何依賴。
 
-- **Tab 內容可以是任意 `UIView`** —— Lottie、SVGA、頭像、自訂控制項，透過 `TeroTabContentProvider` 注入
-- **兩種外觀**：Classic（貼齊底部、滿版）與 FloatingGlass（浮動、Liquid Glass）
-- **Action Item** —— 位於 Bar 上但不是 Tab 的獨立指令，兩種外觀都支援
-- **Overflow 與 More** —— 超過上限自動收納，上限依 `horizontalSizeClass` 選用
-- **Badge** —— 圓點與文字兩種樣式，可統一設定外觀並個別覆寫
-- **選取膠囊會滑過去** —— 全 Bar 只有一顆，在 Tab 之間連續移動；iOS 26 上它是真的玻璃，會反映底下的內容
-- **可中斷的轉場** —— 動畫進行中再點別的 Tab 會立刻轉向，不排隊；動畫期間 Bar 照樣可以操作
-- **連續的選取進度** —— Icon 漸變、兩張圖交叉淡入；Lottie／SVGA 可透過 `TeroTabInteractiveContentProvider` 取得 0…1 的轉場進度
-- **滑動選取** —— 拖曳跟手或左右輕掃換 Tab，預設關閉
-- **捲動驅動的收合** —— 往下捲讓開、往上捲回來，不奪取你的 `UIScrollViewDelegate`
-- **自建的 Navigation Container** —— 每個 Tab 各自一疊 stack，stack 變更同步生效、動畫只是追上來的畫面；轉場被打斷時正在跑的那一段結算到終點，不丟棄也不排隊
-- **頂部 chrome 由畫面自己提供** —— Tero 只要一個 `UIView` 和一條 0…1 的收合進度，不認得標題與版面；需要標題列＋分類列的話 `TeroNavigationBar` 內建那個結構
-- **可取消的互動式返回** —— 邊緣手勢驅動，取消之後 stack 一個字都沒變過
-- **正確的容器行為** —— ViewController 生命週期、navigation stack 保留、safe area、status bar、home indicator 與螢幕邊緣手勢延後的轉發
-- **Swift 與 Objective-C 都能用**
+## 實際畫面
+
+<p align="center">
+  <img src="Assets/Screenshots/floating-glass.jpg" width="270" alt="彩色背景上的 FloatingGlass Tab Bar，旁邊有獨立的新增按鈕">
+  &nbsp;
+  <img src="Assets/Screenshots/badges.jpg" width="270" alt="帶有 999+ 文字 Badge、圓點 Badge 與獨立搜尋按鈕的 FloatingGlass Tab Bar">
+  &nbsp;
+  <img src="Assets/Screenshots/dark.jpg" width="270" alt="深色背景上的 FloatingGlass Tab Bar">
+</p>
+
+<p align="center"><sub>FloatingGlass 搭配 Action Item・文字與圓點 Badge 旁的獨立搜尋按鈕・深色背景上的同一種 Bar<br>
+Swift Demo 的參考案例 C、D、A，於 iOS 27 模擬器擷取，裁切至 Bar 所在的區域。</sub></p>
+
+這些畫面，連同 Classic、仿 Instagram 的參考 App，以及可即時調整動態參數的實驗室，都在 [Demo](#開發) 裡：
+
+~~~bash
+cd Demo/SwiftDemo && xcodegen generate && open SwiftDemo.xcodeproj
+~~~
+
+## 為什麼選擇 Tero？
+
+對大多數 App 來說，`UITabBarController` 與 `UINavigationController` 是正確的預設選擇。Tero 是為設計需求超出這兩個容器表達範圍的 App 準備的：
+
+- **外觀跟著系統走。** `UITabBarController` 在 iOS 18 與 iOS 26 連續兩次大幅改版，客製過它的 App 每次都得回頭調整。
+- **Tab 就是一張圖加一段文字。** Tab 圖示只能是 `UIImage`，塞不進 Lottie、SVGA 或會動的頭像。
+- **Bar 上只能放 Tab。** 不屬於 Tab 的指令，例如中間的「+」或獨立的搜尋按鈕，沒有地方放。
+- **頂部 chrome 受 `UINavigationBar` 的結構限制。** 標題列與分類列在捲動時各自收合的頁首，做起來是在跟導覽列對抗，而不是順著它。
+
+Tero 自己畫兩條 Bar，完全不使用 `UITabBar` 與 `UINavigationBar`。看到哪一種外觀由 `configuration.style` 決定，不由系統版本決定；Tab 顯示什麼、選取如何移動、Bar 如何回應捲動、頂部 chrome 放什麼，都由你提供或設定。圍繞它們的那些工作——ViewController 生命週期、safe area、status bar、邊緣手勢——仍由容器負責。
+
+## 特色
+
+- **完全可自訂的 Tab Bar** —— 色彩、Item 與 Badge 的外觀、形狀／大小／顏色／材質都可以自選的選取膠囊，以及依 size class 設定的可見數量上限，超過的自動收進 More。每個畫面也能要求在自己顯示期間隱藏 Bar，或讓 Bar 改用另一種介面風格。
+- **Classic 與 FloatingGlass** —— 貼齊底部的滿版 Bar，或 iOS 26 以上浮動的 Liquid Glass Bar；移動中的選取膠囊是真的玻璃，會折射底下的內容。iOS 26 以下 FloatingGlass 會降級為 Classic，不以模糊效果仿製玻璃；在 iOS 26 上 Classic 也維持原本的外觀。
+- **自訂 Tab 內容（Lottie／SVGA／任意 `UIView`）** —— 由 `TeroTabContentProvider` 提供 View。採用 `TeroTabInteractiveContentProvider` 後，View 由 0…1 的選取進度驅動，膠囊走到哪，動畫就播到哪。Tero 本身不依賴 Lottie，也不依賴 SVGA。
+- **Action 按鈕與 Badge** —— 位於 Bar 上但不是 Tab 的指令，兩種外觀都支援；圓點與文字 Badge 可統一設定外觀並個別覆寫；長按 Tab 會回報給 delegate。
+- **可互動、可中斷的轉場** —— 全 Bar 只有一顆選取膠囊在 Tab 之間移動，Icon 跟著漸變、交叉淡入；動畫中再點別的 Tab 會從當下位置立刻轉向，不排隊。也可以選擇用手指拖曳膠囊，或左右輕掃換 Tab。push 或 pop 進行中送出新的 stack 變更，正在跑的那一段會直接結算，不在後面排隊；邊緣滑動返回可以取消，取消後 stack 完全不變。
+- **感知捲動的導覽** —— 往下捲時 Tab Bar 縮小或隱藏、頂部 chrome 收合，往上捲時回來。Tero 讀取你的 scroll view，但不奪取它的 delegate；自訂內容也拿得到 0…1 的收合進度。
+- **自建的 Navigation Container** —— `TeroNavigationContainer` 每個 Tab 各自一疊 stack，stack 變更同步生效，動畫只是追上來的畫面。頂部 chrome 是畫面提供的任意 `UIView`；`TeroNavigationBar` 是現成的標題列加次要列，也能鏡射既有的 `UINavigationItem`。生命週期、navigation stack 保留、safe area、status bar、home indicator 與邊緣手勢延後都會正確轉發。
+- **Swift 與 Objective-C** —— 兩種語言共用一套 API，可透過 Swift Package Manager、從 git 安裝的 CocoaPods，或直接加入原始碼。沒有任何依賴，也沒有資源檔。
+
+## 快速開始
+
+在 `Package.swift` 加入套件，或使用 Xcode 的 **File › Add Package Dependencies…**：
+
+~~~swift
+.package(url: "https://github.com/g761007/Tero.git", from: "2.1.2")
+~~~
+
+接著建立 Tab，把回傳值設為 window 的 `rootViewController`：
+
+~~~swift
+import Tero
+import UIKit
+
+func makeRootViewController() -> UIViewController {
+    let configuration = TeroTabBarConfiguration.defaultConfiguration()
+    configuration.style = .floatingGlass   // iOS 26 以下會降級為 .classic
+
+    let tabController = TeroTabBarController(configuration: configuration)
+    tabController.setTabs([
+        TeroTab(
+            identifier: "home",
+            viewController: TeroNavigationContainer(rootViewController: HomeViewController()),
+            item: TeroTabItem(title: "Home", image: UIImage(systemName: "house"),
+                              selectedImage: UIImage(systemName: "house.fill"))
+        ),
+        TeroTab(
+            identifier: "profile",
+            viewController: TeroNavigationContainer(rootViewController: ProfileViewController()),
+            item: TeroTabItem(title: "Profile", image: UIImage(systemName: "person"),
+                              selectedImage: UIImage(systemName: "person.fill"))
+        )
+    ], selectedIdentifier: "home", animated: false)
+    return tabController
+}
+
+// 頂部 chrome 由畫面提供：任意 UIView，或現成的 TeroNavigationBar。
+final class HomeViewController: UIViewController, TeroNavigationChromeProviding {
+    func makeTeroNavigationChromeView() -> UIView {
+        let bar = TeroNavigationBar(frame: .zero)
+        bar.title = "Home"
+        return bar
+    }
+
+    var teroNavigationChromeHeight: CGFloat { TeroNavigationBar.primaryHeight }
+}
+
+final class ProfileViewController: UIViewController {}
+~~~
+
+Objective-C 專案透過從 git 安裝的 CocoaPods 或直接加入原始碼，使用的是同一組類別；請見[安裝](#安裝)與 [Objective-C 範例](#objective-c)。
+
+## 文件
+
+以下是完整的參考文件。
+
+| 主題 | 章節 |
+|---|---|
+| 相容性 | [需求](#需求) |
+| 安裝與 Swift／Objective-C 整合 | [安裝](#安裝) · [Swift](#swift) · [Objective-C](#objective-c) |
+| Tab 自訂 | [自訂 Tab 內容](#自訂-tab-內容) · [選取膠囊](#選取膠囊) · [頁面決定 Bar 的介面風格](#頁面決定-bar-的介面風格) |
+| 互動式轉場 | [轉場的動態](#轉場的動態) · [滑動選取](#滑動選取) · [長按](#長按) |
+| 感知捲動的導覽 | [捲動驅動的收合](#捲動驅動的收合) · [收合](#收合) |
+| Navigation Container | [Navigation Container](#navigation-container) · [頂部 Chrome](#頂部-chrome) · [鏡射 `UINavigationItem`](#鏡射-uinavigationitem) |
+| 設定 | [設定](#設定) |
+| 已知限制 | [已知限制](#已知限制) · [從 `UINavigationController` 遷移](#從-uinavigationcontroller-遷移) |
+| API 穩定性 | [API 穩定性](#api-穩定性) · [Changelog](CHANGELOG.md) |
+| 參與開發 | [開發](#開發) |
 
 ## 需求
 
