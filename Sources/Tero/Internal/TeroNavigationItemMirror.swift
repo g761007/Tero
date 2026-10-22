@@ -94,6 +94,7 @@ internal final class TeroNavigationItemMirror: NSObject {
         }
         // 材質同上：建成 `.automatic`，由導覽列統一套。
         let button = TeroNavigationButton(image: nil, material: .automatic)
+        button.minimumSize = Self.iconButtonSize
         setBackImage(customImage, on: button)
         button.accessibilityLabel = item.backButtonTitle
         button.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
@@ -101,25 +102,28 @@ internal final class TeroNavigationItemMirror: NSObject {
         return button
     }
 
-    /// 原生玻璃返回鍵的大小。實測（iOS 26.5 與 27.0）`UINavigationController` 的返回鍵是
-    /// 44×44 的玻璃圓。
-    private static let backButtonSize = CGSize(width: 44, height: 44)
+    /// 原生玻璃導覽列上一顆圖示的大小。實測（iOS 26.5 與 27.0）`UINavigationController` 的
+    /// 返回鍵與單顆圖示 bar item 都是 44×44 的玻璃圓；比它大的圖照圖的大小。只給圖的話，
+    /// 按鈕大小就是圖的大小，玻璃底縮成貼著圖的小膠囊。
+    private static let iconButtonSize = CGSize(width: 44, height: 44)
 
-    /// 同一次實測的 chevron：semibold、large scale，字級是 body（17pt）。這裡固定 17pt 不跟
-    /// Dynamic Type，與鏡射的文字按鈕寫死 17pt 同一個理由（ADR-0006 的部分跟隨）。
+    /// 同一次實測的 symbol：bar item 是 medium，返回鍵的 chevron 是 semibold，兩者都是
+    /// large scale、body 字級（17pt）。這裡固定 17pt 不跟 Dynamic Type，與鏡射的文字按鈕
+    /// 寫死 17pt 同一個理由（ADR-0006 的部分跟隨）。
+    ///
+    /// 走 preferred configuration 而不是改圖，與原生同一個做法：圖自己帶了 configuration
+    /// 的話，它的 point size 優先（原生 `pointSize: 30` 的 symbol 照 30pt 畫）。
+    private static let itemSymbolConfiguration = UIImage.SymbolConfiguration(
+        pointSize: 17, weight: .medium, scale: .large)
     private static let backSymbolConfiguration = UIImage.SymbolConfiguration(
         pointSize: 17, weight: .semibold, scale: .large)
 
-    /// 預設圖示一律用 SF Symbols（ADR-0007），畫成原生玻璃返回鍵的樣子。只給 symbol 的話，
-    /// 按鈕大小就是 symbol 的大小，玻璃底縮成貼著 chevron 的小膠囊。
-    ///
-    /// 採用者給了自己的圖就照 bar item 的規則畫，大小跟著圖走——`backButtonImage` 的文件
-    /// 是這樣說的。
+    /// 預設圖示一律用 SF Symbols（ADR-0007），畫成原生玻璃返回鍵的樣子；採用者給了自己的
+    /// 圖就照 bar item 的規則畫。
     private func setBackImage(_ customImage: UIImage?, on button: TeroNavigationButton) {
-        let usesSymbol = (customImage == nil)
         button.setImage(customImage.map(Self.barImage) ?? UIImage(systemName: "chevron.backward"), for: .normal)
-        button.setPreferredSymbolConfiguration(usesSymbol ? Self.backSymbolConfiguration : nil, forImageIn: .normal)
-        button.minimumSize = usesSymbol ? Self.backButtonSize : .zero
+        button.setPreferredSymbolConfiguration(
+            customImage == nil ? Self.backSymbolConfiguration : Self.itemSymbolConfiguration, forImageIn: .normal)
         backButtonSource = customImage
     }
 
@@ -251,6 +255,8 @@ internal final class TeroNavigationItemMirror: NSObject {
                                            && barItem.action == nil)
         if let image = barItem.image {
             button.setImage(barImage(image), for: .normal)
+            button.setPreferredSymbolConfiguration(itemSymbolConfiguration, forImageIn: .normal)
+            button.minimumSize = iconButtonSize
         } else {
             button.setTitle(barItem.title, for: .normal)
             // 比照 UIKit：Plain 是 17pt regular、Done 是 17pt semibold。接入筆記記過寫死
