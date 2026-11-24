@@ -8,6 +8,7 @@ Notable changes to Tero, newest first. The format follows [Keep a Changelog](htt
 
 - Cancelling an interactive pop no longer leaves the navigation chrome hidden behind the page. The page being dragged was raised above everything in the container, the chrome included, and a cancelled gesture left it there: the chrome kept its alpha, frame and superview, but the page covered it until the next push or pop.
 - During a pop, animated or interactive, the chrome stays above both pages, so the two chromes cross-fade with the transition, or with the finger, from the first frame. Before, the outgoing page covered the chrome as soon as the pop began, and the cross-fade showed only where the page had already slid away.
+- A page keeps its layout while a push or pop moves it. Only the top page used to reserve room for its chrome, so the page being covered by a push, the page sliding out of a pop, and the page dragged back in by an interactive pop lost that room mid-transition: their content jumped up by the chrome's height, under the chrome, and jumped back when the transition ended. Every page in the container now reserves the expanded height of its own chrome, so `additionalSafeAreaInsets.top` of a page below the top is no longer reset to 0.
 
 ## [2.1.2] - 2026-10-22
 

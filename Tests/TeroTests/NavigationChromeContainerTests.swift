@@ -552,12 +552,80 @@ final class NavigationChromeContainerTests: TeroTabBarControllerTestCase {
         XCTAssertEqual(root.additionalSafeAreaInsets.top, 106, "保留 Consumer 自己設的 10")
     }
 
-    func test_onlyTheTopPageCarriesTheReservedInset() {
+    /// 每一頁都排在自己的 chrome 之下，不論是不是 top：被蓋住的那一頁之後還會被拉回來，
+    /// 它的 inset 在轉場中途變動，內容就會跳一條導覽列的高度。
+    func test_aPageBelowTheTopKeepsItsOwnReservedInset() {
         let root = ChromePage(name: "root", expanded: 96)
         let container = presented(root)
         container.pushViewController(ChromePage(name: "detail", expanded: 60), animated: false)
 
-        XCTAssertEqual(root.additionalSafeAreaInsets.top, 0, "不是 top 就不佔位")
+        XCTAssertEqual(root.additionalSafeAreaInsets.top, 96, "被蓋住不等於不佔位")
+    }
+
+    func test_duringAnInteractivePop_thePageBelowIsLaidOutAsItWasOnTop() throws {
+        let root = ChromePage(name: "root", expanded: 96)
+        let container = presented(root)
+        let marker = UIView()
+        marker.translatesAutoresizingMaskIntoConstraints = false
+        root.view.addSubview(marker)
+        NSLayoutConstraint.activate([
+            marker.topAnchor.constraint(equalTo: root.view.safeAreaLayoutGuide.topAnchor),
+            marker.leadingAnchor.constraint(equalTo: root.view.leadingAnchor),
+            marker.widthAnchor.constraint(equalToConstant: 10),
+            marker.heightAnchor.constraint(equalToConstant: 10)
+        ])
+        container.view.layoutIfNeeded()
+        let onTop = marker.frame.minY
+        XCTAssertEqual(onTop, container.view.safeAreaInsets.top + 96, accuracy: 0.5, "前提：內容排在 chrome 之下")
+
+        container.pushViewController(ChromePage(name: "detail", expanded: 44), animated: false)
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.3)
+        container.view.layoutIfNeeded()
+
+        XCTAssertEqual(marker.frame.minY, onTop, accuracy: 0.5,
+                       "被拉回來的那一頁要跟它在 top 時一模一樣，不能少一條導覽列的高度、鑽到 chrome 底下")
+        container.endInteractivePop(progress: 0.3, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+    }
+
+    /// 一次設進來的 stack，下層頁要等到被拉出來才建 chrome；inset 也要在那一刻補上，不能等到 finish。
+    func test_aPageThatWasNeverOnTop_getsItsInsetAsSoonAsAnInteractivePopDragsItIn() {
+        let root = ChromePage(name: "root")
+        let container = presented(root)
+        let middle = ChromePage(name: "middle", expanded: 80)
+        container.setViewControllers([root, middle, ChromePage(name: "top", expanded: 44)], animated: false)
+
+        container.beginInteractivePop()
+
+        XCTAssertEqual(middle.additionalSafeAreaInsets.top, 80)
+        container.endInteractivePop(progress: 0, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+    }
+
+    func test_duringAnAnimatedPush_thePageBeingCoveredKeepsItsInset() {
+        let root = ChromePage(name: "root", expanded: 96)
+        let container = presented(root)
+        container.transitionDuration = 1.0
+
+        container.pushViewController(ChromePage(name: "detail", expanded: 44), animated: true)
+
+        XCTAssertEqual(root.additionalSafeAreaInsets.top, 96, "被蓋住的那一頁不能在動畫中途往上跳")
+        waitUntil("轉場結算") { container.transitionState == .idle }
+    }
+
+    func test_duringAnAnimatedPop_thePageSlidingOutKeepsItsInsetUntilItLeaves() {
+        let root = ChromePage(name: "root", expanded: 96)
+        let container = presented(root)
+        let detail = ChromePage(name: "detail", expanded: 44)
+        container.pushViewController(detail, animated: false)
+        container.transitionDuration = 1.0
+
+        container.popViewController(animated: true)
+
+        XCTAssertEqual(detail.additionalSafeAreaInsets.top, 44, "滑出去的那一頁不能在動畫中途往上跳")
+        waitUntil("轉場結算") { container.transitionState == .idle }
+        XCTAssertEqual(detail.additionalSafeAreaInsets.top, 0, "離開 children 才歸還")
     }
 }
 
