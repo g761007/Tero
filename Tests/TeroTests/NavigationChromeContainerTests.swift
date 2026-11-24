@@ -186,6 +186,92 @@ final class NavigationChromeContainerTests: TeroTabBarControllerTestCase {
                       "推進新頁之後也要維持——安裝內容的路徑有四條，全部都得對")
     }
 
+    /// 取消之後沒有任何路徑會再排一次層級：留下來的那一頁一旦壓在 chrome 上，就一直壓著。
+    func test_chromeStaysAboveTheContentAfterACancelledInteractivePop() throws {
+        let container = presented(ChromePage(name: "root"))
+        let detail = ChromePage(name: "detail")
+        container.pushViewController(detail, animated: false)
+
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.3)
+        container.endInteractivePop(progress: 0.3, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+
+        XCTAssertTrue(try chromeIsAboveContent(container, chrome: detail, page: detail),
+                      "拉一半放開之後，chrome 的 alpha、frame、parent 都對，畫面上卻是頁面的底色")
+    }
+
+    private func stackingIndex(of view: UIView, in container: TeroNavigationContainer) throws -> Int {
+        try XCTUnwrap(container.view.subviews.firstIndex(of: view), "\(view) 不在容器的 view 裡")
+    }
+
+    /// pop 時離開的那一頁要蓋住進來的那一頁，但兩頁都要在 chrome 之下：
+    /// 兩頁的 chrome 在轉場中交叉淡入（issue #91），被頁面蓋住就看不到。
+    private func assertPopStacking(
+        _ container: TeroNavigationContainer,
+        outgoing: ChromePage,
+        incoming: ChromePage,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        let chromeContainer = try XCTUnwrap(outgoing.madeView?.superview, file: file, line: line)
+        let chromeIndex = try stackingIndex(of: chromeContainer, in: container)
+        let outgoingIndex = try stackingIndex(of: outgoing.view, in: container)
+        let incomingIndex = try stackingIndex(of: incoming.view, in: container)
+        XCTAssertGreaterThan(outgoingIndex, incomingIndex,
+                             "離開的那一頁被進來的那一頁蓋住，就看不到它被拉開", file: file, line: line)
+        XCTAssertGreaterThan(chromeIndex, outgoingIndex,
+                             "chrome 被離開的那一頁蓋住，交叉淡入整段看不見", file: file, line: line)
+    }
+
+    func test_duringAnInteractivePop_theChromeStaysAboveBothPages() throws {
+        let root = ChromePage(name: "root")
+        let container = presented(root)
+        let detail = ChromePage(name: "detail")
+        container.pushViewController(detail, animated: false)
+
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.3)
+
+        try assertPopStacking(container, outgoing: detail, incoming: root)
+        container.endInteractivePop(progress: 0.3, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+    }
+
+    func test_duringAnAnimatedPop_theChromeStaysAboveBothPages() throws {
+        let root = ChromePage(name: "root")
+        let container = presented(root)
+        container.transitionDuration = 1.0
+        let detail = ChromePage(name: "detail")
+        container.pushViewController(detail, animated: false)
+
+        container.popViewController(animated: true)
+
+        try assertPopStacking(container, outgoing: detail, incoming: root)
+        waitUntil("轉場結算") { container.transitionState == .idle }
+    }
+
+    /// 手勢途中被有動畫的 push 打斷：被拉著的那一頁變成這段 push 的 outgoing，
+    /// 新的一頁要從它上面滑進來，而不是被它蓋到結算為止。
+    func test_anAnimatedPushDuringAnInteractivePop_slidesTheNewPageInAboveTheOldOne() throws {
+        let container = presented(ChromePage(name: "root"))
+        let detail = ChromePage(name: "detail")
+        container.pushViewController(detail, animated: false)
+        container.transitionDuration = 1.0
+
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.4)
+        let third = ChromePage(name: "third")
+        container.pushViewController(third, animated: true)
+
+        let chromeContainer = try XCTUnwrap(third.madeView?.superview)
+        let thirdIndex = try stackingIndex(of: third.view, in: container)
+        XCTAssertGreaterThan(thirdIndex, try stackingIndex(of: detail.view, in: container),
+                             "push 進來的那一頁被舊的那一頁蓋住，整段滑入都看不到")
+        XCTAssertGreaterThan(try stackingIndex(of: chromeContainer, in: container), thirdIndex)
+        waitUntil("轉場結算") { container.transitionState == .idle }
+    }
+
     // MARK: - 轉場期間的 chrome（Phase 15 A1 待驗）
 
     func test_animatedPush_givesTheIncomingPageItsOwnTopInsetBeforeTheAnimationEnds() {

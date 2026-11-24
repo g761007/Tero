@@ -50,9 +50,8 @@ internal final class TeroNavigationTransitionCoordinator {
         incoming?.view.transform = CGAffineTransform(translationX: width * operation.incomingOffsetRatio, y: 0)
         outgoing?.view.transform = .identity
 
-        // pop 時離開的那一頁要蓋在上面，否則它會被進入的那一頁遮住。
-        if operation == .pop, let outgoingView = outgoing?.viewIfLoaded {
-            containerView.bringSubviewToFront(outgoingView)
+        if operation == .pop {
+            Self.placeOutgoing(outgoing, above: incoming, in: containerView)
         }
 
         settleHandler = settle
@@ -90,10 +89,22 @@ internal final class TeroNavigationTransitionCoordinator {
         let width = containerView.bounds.width
         incoming?.view.transform = CGAffineTransform(translationX: -width * Self.parallaxRatio, y: 0)
         outgoing?.view.transform = .identity
-        if let outgoingView = outgoing?.viewIfLoaded {
-            containerView.bringSubviewToFront(outgoingView)
-        }
+        Self.placeOutgoing(outgoing, above: incoming, in: containerView)
         interactive = (outgoing, incoming, width)
+    }
+
+    /// pop 時離開的那一頁要蓋在進入的那一頁上面，否則它會被遮住。
+    ///
+    /// 只壓過那一頁，不能 `bringSubviewToFront`：兩頁之上還有 chrome，疊到最上層會把
+    /// chrome 一起蓋掉——轉場中看不到它跟著進度交叉淡入，取消之後也一直蓋著。
+    private static func placeOutgoing(
+        _ outgoing: UIViewController?,
+        above incoming: UIViewController?,
+        in containerView: UIView
+    ) {
+        guard let outgoingView = outgoing?.viewIfLoaded, let incomingView = incoming?.viewIfLoaded,
+              outgoingView.superview === containerView, incomingView.superview === containerView else { return }
+        containerView.insertSubview(outgoingView, aboveSubview: incomingView)
     }
 
     /// 以 0…1 的進度更新兩頁的位置。1 表示手指已經把上一頁完全拉開。
