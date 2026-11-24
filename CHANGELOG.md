@@ -2,6 +2,13 @@
 
 Notable changes to Tero, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and version numbers follow the rules in the README's [API stability](README.md#api-stability) section.
 
+## [2.1.3] - 2026-11-24
+
+### Fixed
+
+- Cancelling an interactive pop no longer leaves the navigation chrome hidden behind the page. The page being dragged was raised above everything in the container, the chrome included, and a cancelled gesture left it there: the chrome kept its alpha, frame and superview, but the page covered it until the next push or pop.
+- During a pop, animated or interactive, the chrome stays above both pages, so the two chromes cross-fade with the transition, or with the finger, from the first frame. Before, the outgoing page covered the chrome as soon as the pop began, and the cross-fade showed only where the page had already slid away.
+
 ## [2.1.2] - 2026-10-22
 
 ### Changed
@@ -42,6 +49,7 @@ Notable changes to Tero, newest first. The format follows [Keep a Changelog](htt
 
 First release from this repository.
 
+[2.1.3]: https://github.com/g761007/Tero/compare/2.1.2...2.1.3
 [2.1.2]: https://github.com/g761007/Tero/compare/2.1.1...2.1.2
 [2.1.1]: https://github.com/g761007/Tero/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/g761007/Tero/compare/2.0.0...2.1.0
