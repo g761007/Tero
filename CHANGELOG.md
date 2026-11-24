@@ -2,7 +2,7 @@
 
 Notable changes to Tero, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and version numbers follow the rules in the README's [API stability](README.md#api-stability) section.
 
-## [2.1.3] - 2026-11-24
+## [2.1.3] - 2026-11-25
 
 ### Fixed
 
