@@ -548,6 +548,9 @@ public final class TeroTabBarController: UIViewController {
             finishNavigation(transaction.id, cancelled: false)
             return nil
         }
+        // 容器在提交時就排過一次版，那時還沒有 transaction，剛上來的那一頁被當成「目前在上面」、
+        // 拿到的是來源頁的保留。這裡在第一個畫面之前改正，兩頁從轉場第一格起就各排各的。
+        updateChildSafeAreaInsets()
         view.layoutIfNeeded()
         previewNavigation(transaction.destinationState)
         return transaction.id
@@ -959,19 +962,53 @@ public final class TeroTabBarController: UIViewController {
     /// Classic 貼齊底部滿版，`contentHeight` 本來就不含安全區，維持原樣。
     private func updateChildSafeAreaInsets() {
         guard isViewLoaded else { return }
-        let reserved = tabBar.contentHeight(for: reservedPresentationState) + tabBar.floatingBottomInset
-        let inset = reservedPresentationState == .hidden
-            ? 0
-            : (tabBarStyle == .floatingGlass
-                ? max(0, reserved - view.safeAreaInsets.bottom)
-                : reserved)
+        let inset = childBottomInset(for: reservedPresentationState)
         // 包在 withoutTracking 裡：寫 inset 會移動 contentOffset，不擋住的話
         // 下一筆取樣會把它讀成使用者捲動（§31 的回授迴圈）。
         scrollTracker.withoutTracking {
             for child in children {
-                safeAreaLedger.apply(inset, to: child)
+                if let container = child as? TeroNavigationContainer {
+                    // 容器裡每一頁各自讓位，由容器依 `reservedBottomInset(for:in:)` 代寫
+                    // （ADR-0004 的 2.1.3 修訂）。寫在容器上的話，轉場中兩頁只能共用一個值。
+                    safeAreaLedger.apply(0, to: container)
+                    container.updateReservedInsets()
+                } else {
+                    safeAreaLedger.apply(inset, to: child)
+                }
             }
         }
+    }
+
+    private func childBottomInset(for state: TeroTabBarPresentationState) -> CGFloat {
+        guard state != .hidden else { return 0 }
+        let reserved = tabBar.contentHeight(for: state) + tabBar.floatingBottomInset
+        return tabBarStyle == .floatingGlass ? max(0, reserved - view.safeAreaInsets.bottom) : reserved
+    }
+
+    /// 容器裡一頁要讓出的底部：依**那一頁**讓 Bar 呈現的樣子，不是 Bar 現在的樣子。
+    ///
+    /// 目前在上面的那一頁——轉場中是轉場開始時在上面的那一頁——沿用目前的保留，可能是
+    /// 程式設的最小化。其餘頁只看鎖定與自己的政策：捲動從不動保留（ADR-0004），結算時
+    /// `refreshScrollTracking` 也是這樣算的。所以一頁的值從轉場開始到結算都不變。
+    private func reservedBottomInset(
+        for page: UIViewController,
+        in container: TeroNavigationContainer
+    ) -> CGFloat {
+        let current: UIViewController?
+        if container !== selectedViewController {
+            current = nil
+        } else if let transaction = navigationTransaction {
+            current = transaction.source
+        } else {
+            current = container.topViewController
+        }
+        let state: TeroTabBarPresentationState
+        if let current, page === current {
+            state = reservedPresentationState
+        } else {
+            state = isPresentationStateLocked || pagePolicy(page) == .hidden ? .hidden : .expanded
+        }
+        return childBottomInset(for: state)
     }
 
     // MARK: - Containment
@@ -1000,12 +1037,17 @@ public final class TeroTabBarController: UIViewController {
             guard let self, let container, self.selectedViewController === container else { return }
             self.endContainerNavigation(id, cancelled: cancelled)
         }
+        container.tabBarReservation = { [weak self, weak container] page in
+            guard let self, let container, self.isViewLoaded else { return 0 }
+            return self.reservedBottomInset(for: page, in: container)
+        }
     }
 
     private func detachChild(_ viewController: UIViewController) {
         if let container = viewController as? TeroNavigationContainer {
             container.onNavigationTransition = nil
             container.onNavigationTransitionEnd = nil
+            container.tabBarReservation = nil
             container.receivesExternalScrollSamples = false
         }
         safeAreaLedger.release(viewController)

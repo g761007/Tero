@@ -6,8 +6,10 @@ import UIKit
 /// （ADR-0004 的 2.0 修訂）。
 ///
 /// 一個帳本綁一個軸，這是型別層面的軸擁有權：Tab Bar 容器寫 bottom，Navigation Container
-/// 寫 top，兩者都不得轉寫它從上層收到的 inset。把 edge 放進 `init` 而不是每次呼叫時傳，
-/// 是為了讓「一個容器只寫一向」這條規則無法在呼叫端被繞過。
+/// 寫 top，兩者都不得轉寫它從上層收到的 inset。Navigation Container 掛在 Tab Bar 下時，
+/// bottom 改由它依 Tab Bar 的回答寫給每一頁，Tab Bar 就不再寫在它身上（2.1.3 修訂）——
+/// 同一頁的同一向始終只有一個寫入者。把 edge 放進 `init` 而不是每次呼叫時傳，是為了讓
+/// 「一個帳本只寫一向」這條規則無法在呼叫端被繞過。
 ///
 /// entry 綁 containment：View Controller 成為 direct child 時建立、離開 children 時歸還，
 /// 與轉場是否提交無關。
