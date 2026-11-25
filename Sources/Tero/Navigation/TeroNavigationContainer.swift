@@ -512,6 +512,8 @@ public final class TeroNavigationContainer: UIViewController {
         // 下一頁要先在階層裡才能跟著手指動，但它還不是 top——stack 沒變。
         addChildIfNeeded(incoming)
         installChromeIfNeeded(for: incoming)
+        // 沒當過 top 的頁面到這裡才有 chrome，inset 要在它進畫面之前補上。
+        updateReservedInsets()
         installContentView(of: incoming)
         view.layoutIfNeeded()
 
@@ -567,7 +569,7 @@ public final class TeroNavigationContainer: UIViewController {
             guard let self else { return }
             if shouldFinish {
                 pair.outgoing.viewIfLoaded?.removeFromSuperview()
-                self.returnTopInset(for: pair.outgoing)
+                self.returnReservedInsets(for: pair.outgoing)
                 self.removeChrome(for: pair.outgoing)
                 pair.outgoing.removeFromParent()
                 pair.outgoing.endAppearanceTransition()
@@ -777,12 +779,12 @@ public final class TeroNavigationContainer: UIViewController {
     /// 依兩個端點內插目前高度，並把進度交給 provider。
     ///
     /// 高度是設定值不是量測值（B18），每次都重問 provider（C3）。轉場中高度由轉場進度
-    /// 決定，這裡只把 reserved inset 對到 top。
+    /// 決定，這裡只重對每一頁的 reserved inset。
     private func updateChromeGeometry() {
         guard isViewLoaded else { return }
         if let transition = chromeTransition {
             applyChromeTransition(progress: transition.progress)
-            updateTopReservedInset()
+            updateReservedInsets()
             return
         }
         let key = topViewController.map(ObjectIdentifier.init)
@@ -798,7 +800,7 @@ public final class TeroNavigationContainer: UIViewController {
         // 之上的增量，所以它就是宣告的高度本身。少了這一項，chrome 蓋住的範圍會比
         // 內容讓開的範圍短一個狀態列，中間空一條。
         chromeHeightConstraint?.constant = view.safeAreaInsets.top + height
-        updateTopReservedInset()
+        updateReservedInsets()
 
         if let key, let chromeView = chromeViews[key],
            let provider = topViewController as? TeroNavigationChromeProviding {
@@ -806,24 +808,27 @@ public final class TeroNavigationContainer: UIViewController {
         }
     }
 
-    /// Top 軸的 reserved inset。
+    /// 每一頁的 reserved inset：top 是自己 chrome 的，bottom 是 Tab Bar 的。
     ///
-    /// 依 ADR-0004 的 2.0 修訂：這個容器**只寫 top**，且只寫自己的 direct children，
-    /// 不轉寫它從上層收到的 inset。捲動驅動時值恆為展開高度（B19），避免
+    /// 依 ADR-0004 的 2.0 修訂：這個容器只寫自己的 direct children，不轉寫它從上層收到的
+    /// inset。捲動驅動時值恆為展開高度（B19），避免
     /// 「inset 變 → contentOffset 變 → 被判成 user scroll」這條回授路徑。
-    private func updateTopReservedInset() {
+    ///
+    /// 每一頁都拿自己的值，不論是不是 top：轉場中兩頁同時在畫面上，被蓋住、被拉回來、
+    /// 正在滑出去的那一頁都要排得跟它在 top 時一樣。只給 top 的話，其餘頁的 inset 在
+    /// 轉場中途歸零，內容就往上跳一條導覽列的高度。bottom 同理：寫在整個容器上的話兩頁
+    /// 只能共用一個值，其中一頁的底部一定會在轉場中錯位、結算時再跳回來。
+    internal func updateReservedInsets() {
         guard isViewLoaded else { return }
-        let reserved = topViewController
-            .map(ObjectIdentifier.init)
-            .flatMap { _ in chromeHeights(of: topViewController) }?.expanded ?? 0
-
         var changed = false
         // 寫 inset 會移動 contentOffset；自己的追蹤器整段暫停，與 Tab Bar 那條路徑的
         // `withoutTracking` 是同一件事。上層餵樣本時這個追蹤器沒在觀察，包著也無害。
         ownScrollTracker.withoutTracking {
             for child in children {
-                let value = child === topViewController ? reserved : 0
-                changed = safeAreaLedger.apply(value, to: child) || changed
+                let top = chromeHeights(of: child)?.expanded ?? 0
+                changed = safeAreaLedger.apply(top, to: child) || changed
+                let bottom = tabBarReservation?(child) ?? 0
+                changed = tabBarSafeAreaLedger.apply(bottom, to: child) || changed
             }
         }
         // 寫 inset 會移動 contentOffset。下一筆取樣必須被當成幾何變更而不是使用者捲動，
@@ -831,7 +836,6 @@ public final class TeroNavigationContainer: UIViewController {
         if changed { pendingGeometryChange = true }
     }
 
-    /// 只寫 top（軸擁有權，ADR-0004 2.0 修訂）。
     // MARK: - 對上層的轉場通知（Phase 9）
     //
     // 容器**不持有、不查詢、不呼叫 parent**（§38）。它只是把「轉場開始了」送出去，
@@ -843,11 +847,22 @@ public final class TeroNavigationContainer: UIViewController {
     /// 轉場結束。`cancelled` 為 true 表示互動式返回被取消。
     internal var onNavigationTransitionEnd: ((UUID, Bool) -> Void)?
 
+    /// 一頁要替 Tab Bar 讓出多少底部（ADR-0004 的 2.1.3 修訂）。
+    ///
+    /// Tab Bar 容器不把 bottom 寫在這個容器上，而是由這裡依它的回答寫給每一頁——
+    /// 只有容器知道轉場中有哪幾頁在畫面上，也只有 Tab Bar 知道每一頁讓它呈現成什麼樣子。
+    /// 沒有掛在 Tab Bar 下時為 nil，bottom 一律不寫。
+    internal var tabBarReservation: ((UIViewController) -> CGFloat)? {
+        didSet { updateReservedInsets() }
+    }
+
     private var safeAreaLedger = TeroSafeAreaLedger(edge: .top)
+    private var tabBarSafeAreaLedger = TeroSafeAreaLedger(edge: .bottom)
     private var pendingGeometryChange = false
 
-    private func returnTopInset(for viewController: UIViewController) {
+    private func returnReservedInsets(for viewController: UIViewController) {
         safeAreaLedger.release(viewController)
+        tabBarSafeAreaLedger.release(viewController)
     }
 
     private func addChildIfNeeded(_ viewController: UIViewController) {
@@ -906,7 +921,7 @@ public final class TeroNavigationContainer: UIViewController {
         // incoming 要以自己的帶高排版，否則它會帶著 0 的 inset 滑進來、結算那一刻跳一次。
         // chrome 則是兩頁一起在容器裡，跟內容同一個 animator 交叉淡入、高度內插（issue #91）。
         beginChromeTransition(from: outgoing, to: incoming)
-        updateTopReservedInset()
+        updateReservedInsets()
         updateScrollEdgeSource()
         updateOwnScrollTracking()
         view.layoutIfNeeded()
@@ -970,7 +985,7 @@ public final class TeroNavigationContainer: UIViewController {
         }
         for viewController in removing {
             viewController.viewIfLoaded?.removeFromSuperview()
-            returnTopInset(for: viewController)   // entry 綁 containment，離開就歸還
+            returnReservedInsets(for: viewController)   // entry 綁 containment，離開就歸還
             removeChrome(for: viewController)
             viewController.removeFromParent()  // 後半
         }

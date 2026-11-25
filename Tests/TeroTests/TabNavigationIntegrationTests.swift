@@ -45,9 +45,9 @@ private final class ScrollingChromePage: UIViewController,
 final class TabNavigationIntegrationTests: TeroTabBarControllerTestCase {
 
     private func makeController(
-        containers: [TeroNavigationContainer]
+        containers: [TeroNavigationContainer],
+        configuration: TeroTabBarConfiguration = .defaultConfiguration()
     ) -> TeroTabBarController {
-        let configuration = TeroTabBarConfiguration.defaultConfiguration()
         let controller = TeroTabBarController(configuration: configuration)
         let tabs = containers.enumerated().map { index, container in
             TeroTab(
@@ -245,5 +245,104 @@ final class TabNavigationIntegrationTests: TeroTabBarControllerTestCase {
         container.pushViewController(HidingPage(), animated: false)
 
         XCTAssertEqual(container.preferredTeroTabVisibilityPolicy, .hidden, "原封轉發 top 的宣告")
+    }
+
+    // MARK: - 每一頁各自讓出 Tab Bar（ADR-0004 修訂）
+
+    // 轉場中兩頁同時在畫面上：底部保留寫在整個容器上的話，兩頁只能共用一個值，
+    // 轉場中是來源頁的、結算時一次換成目的頁的，其中一頁的底部一定會跳。
+
+    private func bottom(of page: UIViewController, in controller: TeroTabBarController) -> CGFloat {
+        controller.view.layoutIfNeeded()
+        return page.view.safeAreaInsets.bottom
+    }
+
+    func test_duringAnInteractivePop_thePageBelowKeepsTheBottomItHadBeforeThePush() {
+        let root = UIViewController()
+        let container = TeroNavigationContainer(rootViewController: root)
+        let controller = makeController(containers: [container])
+        let before = bottom(of: root, in: controller)
+        XCTAssertGreaterThan(before, controller.view.safeAreaInsets.bottom, "前提：root 讓出了 Tab Bar")
+        container.pushViewController(HidingPage(), animated: false)
+
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.3)
+
+        XCTAssertEqual(bottom(of: root, in: controller), before, accuracy: 0.5,
+                       "Tab Bar 會跟著回來的那一頁，整段手勢都要讓出它，不是等 finish 才跳")
+        container.endInteractivePop(progress: 0.3, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+    }
+
+    func test_duringAnAnimatedPush_aPageThatHidesTheTabBarIsLaidOutWithoutItFromTheStart() {
+        let root = UIViewController()
+        let container = TeroNavigationContainer(rootViewController: root)
+        container.transitionDuration = 1.0
+        let controller = makeController(containers: [container])
+        let rootBottom = bottom(of: root, in: controller)
+        let hiding = HidingPage()
+
+        container.pushViewController(hiding, animated: true)
+
+        XCTAssertEqual(bottom(of: hiding, in: controller), controller.view.safeAreaInsets.bottom, accuracy: 0.5,
+                       "不顯示 Tab Bar 的頁不替它留位；等結算才收回，底部的輸入列會在結束那一刻往下跳")
+        XCTAssertEqual(bottom(of: root, in: controller), rootBottom, accuracy: 0.5, "被蓋住的那一頁不變")
+        waitUntil("轉場結算") { container.transitionState == .idle }
+        XCTAssertEqual(bottom(of: hiding, in: controller), controller.view.safeAreaInsets.bottom, accuracy: 0.5)
+    }
+
+    func test_duringAnAnimatedPop_bothPagesKeepTheirOwnBottom() {
+        let root = UIViewController()
+        let container = TeroNavigationContainer(rootViewController: root)
+        container.transitionDuration = 1.0
+        let controller = makeController(containers: [container])
+        let rootBottom = bottom(of: root, in: controller)
+        let hiding = HidingPage()
+        container.pushViewController(hiding, animated: false)
+
+        container.popViewController(animated: true)
+
+        XCTAssertEqual(bottom(of: root, in: controller), rootBottom, accuracy: 0.5, "回來的那一頁不必等結算")
+        XCTAssertEqual(bottom(of: hiding, in: controller), controller.view.safeAreaInsets.bottom, accuracy: 0.5,
+                       "滑出去的那一頁也不變")
+        waitUntil("轉場結算") { container.transitionState == .idle }
+        XCTAssertEqual(bottom(of: root, in: controller), rootBottom, accuracy: 0.5)
+    }
+
+    func test_underTheProgrammaticLock_aPageDraggedBackReservesNothing() {
+        let root = UIViewController()
+        let container = TeroNavigationContainer(rootViewController: root)
+        let controller = makeController(containers: [container])
+        controller.setTabBarPresentationState(.hidden, animated: false)
+        container.pushViewController(UIViewController(), animated: false)
+
+        container.beginInteractivePop()
+        container.updateInteractivePop(progress: 0.3)
+
+        XCTAssertEqual(bottom(of: root, in: controller), controller.view.safeAreaInsets.bottom, accuracy: 0.5,
+                       "鎖定期間 Tab Bar 不會出現，拉回來的那一頁不該替它留位")
+        container.endInteractivePop(progress: 0.3, velocity: 0)
+        waitUntil("手勢結算") { container.transitionState == .idle }
+    }
+
+    /// 程式最小化讓出的是最小化的高度（ADR-0004：程式驅動才動 inset）。這只屬於當時在上面的
+    /// 那一頁；push 時它被蓋住，仍要維持離開時的樣子。
+    func test_aProgrammaticMinimizeStaysWithThePageItWasSetOn() throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("FloatingGlass 需要 iOS 26+") }
+        let configuration = TeroTabBarConfiguration.defaultConfiguration()
+        configuration.style = .floatingGlass
+        let root = UIViewController()
+        let container = TeroNavigationContainer(rootViewController: root)
+        container.transitionDuration = 1.0
+        let controller = makeController(containers: [container], configuration: configuration)
+        let expanded = bottom(of: root, in: controller)
+        XCTAssertTrue(controller.setTabBarPresentationState(.minimized, animated: false))
+        let minimized = bottom(of: root, in: controller)
+        XCTAssertLessThan(minimized, expanded, "前提：最小化讓出的比較少")
+
+        container.pushViewController(UIViewController(), animated: true)
+
+        XCTAssertEqual(bottom(of: root, in: controller), minimized, accuracy: 0.5)
+        waitUntil("轉場結算") { container.transitionState == .idle }
     }
 }
