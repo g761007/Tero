@@ -72,7 +72,7 @@ Tero 自己畫兩條 Bar，完全不使用 `UITabBar` 與 `UINavigationBar`。�
 在 `Package.swift` 加入套件，或使用 Xcode 的 **File › Add Package Dependencies…**：
 
 ~~~swift
-.package(url: "https://github.com/g761007/Tero.git", from: "2.1.3")
+.package(url: "https://github.com/g761007/Tero.git", from: "2.2.0")
 ~~~
 
 接著建立 Tab，把回傳值設為 window 的 `rootViewController`：
@@ -155,7 +155,7 @@ Objective-C 專案透過從 git 安裝的 CocoaPods 或直接加入原始碼，�
 
 ~~~swift
 dependencies: [
-    .package(url: "https://github.com/g761007/Tero.git", from: "2.1.3")
+    .package(url: "https://github.com/g761007/Tero.git", from: "2.2.0")
 ]
 ~~~
 
@@ -166,7 +166,7 @@ platform :ios, '15.0'
 use_frameworks! :linkage => :static
 
 target 'YourApp' do
-  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.3'
+  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.2.0'
 end
 ~~~
 

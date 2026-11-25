@@ -72,7 +72,7 @@ Tero draws both bars itself and never uses `UITabBar` or `UINavigationBar`. Whic
 Add the package to `Package.swift`, or through Xcode's **File › Add Package Dependencies…**:
 
 ~~~swift
-.package(url: "https://github.com/g761007/Tero.git", from: "2.1.3")
+.package(url: "https://github.com/g761007/Tero.git", from: "2.2.0")
 ~~~
 
 Then build the tabs and set the result as your window's `rootViewController`:
@@ -155,7 +155,7 @@ The rest of this README is the full reference.
 
 ~~~swift
 dependencies: [
-    .package(url: "https://github.com/g761007/Tero.git", from: "2.1.3")
+    .package(url: "https://github.com/g761007/Tero.git", from: "2.2.0")
 ]
 ~~~
 
@@ -166,7 +166,7 @@ platform :ios, '15.0'
 use_frameworks! :linkage => :static
 
 target 'YourApp' do
-  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.1.3'
+  pod 'Tero', :git => 'https://github.com/g761007/Tero.git', :tag => '2.2.0'
 end
 ~~~
 
