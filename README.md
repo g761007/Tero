@@ -127,7 +127,7 @@ The rest of this README is the full reference.
 |---|---|
 | Compatibility | [Requirements](#requirements) |
 | Installation and Swift / Objective-C integration | [Installation](#installation) · [Swift](#swift) · [Objective-C](#objective-c) |
-| Tab customisation | [Custom tab content](#custom-tab-content) · [The selection capsule](#the-selection-capsule) · [Per-screen bar appearance](#per-screen-bar-appearance) |
+| Tab customisation | [Custom tab content](#custom-tab-content) · [The selection capsule](#the-selection-capsule) · [Bar material](#bar-material) · [Per-screen bar appearance](#per-screen-bar-appearance) |
 | Interactive transitions | [Transition motion](#transition-motion) · [Swipe selection](#swipe-selection) · [Long press](#long-press) |
 | Scroll-aware navigation | [Scroll-driven collapse](#scroll-driven-collapse) · [Collapsing](#collapsing) |
 | Navigation container | [Navigation container](#navigation-container) · [Top chrome](#top-chrome) · [Mirroring a `UINavigationItem`](#mirroring-a-uinavigationitem) |
@@ -308,6 +308,42 @@ tab.item.selectionSize = CGSize(width: 60, height: 40)
 There are two colour values because the two materials need contrast in **opposite directions**: `selectionIndicatorColor` fills the solid shape, `selectionIndicatorGlassTint` tints the glass. A glass tint is absorbed by the host material, and in light mode a white tint will not surface at any opacity, so it defaults to darker in light mode and lighter in dark mode. Set both to the same value if you want one colour.
 
 **`selectionIndicatorColor`'s default assumes the host capsule is not light.** Turn `floatingGlassAppearance.glassTintColor` light — 70% white, say — and you get white on white: one shipping app measured an average colour difference of 13.3 between capsule and host, which reads as a single smear; the same layout with a 30% neutral grey measured 26.3, double the contrast and without reaching for glass. **When you lighten the host tint, adjust `selectionIndicatorColor` with it.** This is the same reasoning as the glass tint above, pointing the other way.
+
+### Bar material
+
+Under FloatingGlass the two capsules are Liquid Glass. Liquid Glass adapts to what is behind it — over a dark photo it turns into a darker, greyer glass — and a tint only makes the colour on top thicker or thinner. When a design needs the bar to look the same over any content, switch the capsules to a blur, and give them depth with a rim along the inner edge and a drop shadow. Four groups of settings, each independent and off by default:
+
+~~~swift
+// material: a blur with a translucent fill on top
+configuration.floatingGlassAppearance.material = .blur                   // default .liquidGlass
+configuration.floatingGlassAppearance.blurEffectStyle = .systemUltraThinMaterialLight
+configuration.floatingGlassAppearance.blurFillColor = UIColor.white.withAlphaComponent(0.3)
+
+// a 1pt rim inside the edge, bright at the top leading corner, dim in the middle
+configuration.floatingGlassAppearance.rimWidth = 1                       // 0 = no rim
+configuration.floatingGlassAppearance.rimColors = [
+    UIColor.white.withAlphaComponent(0.7),
+    UIColor.white.withAlphaComponent(0.1),
+    UIColor.white.withAlphaComponent(0.45),
+]
+configuration.floatingGlassAppearance.rimStartPoint = CGPoint(x: 0, y: 0) // unit coordinates of the capsule
+configuration.floatingGlassAppearance.rimEndPoint = CGPoint(x: 1, y: 1)
+
+// a soft drop shadow
+configuration.floatingGlassAppearance.shadowOpacity = 0.06               // 0 = no shadow
+configuration.floatingGlassAppearance.shadowOffset = CGSize(width: 0, height: 4)
+configuration.floatingGlassAppearance.shadowRadius = 10
+
+// room between the capsule's edge and the tabs
+configuration.floatingGlassAppearance.contentInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
+~~~
+
+- **Material.** With `.blur` the two capsules are separate blurs and do not merge, so `glassTintMode`, `glassTintColor` and `glassContainerSpacing` have no effect. With Reduce Transparency on, the capsules fall back to `blurFillColor` made opaque, or to `systemBackground` without one.
+- **Rim.** It runs along the inside of both capsules, above the tabs, and takes no touches. The colours are spread evenly from `rimStartPoint` to `rimEndPoint`; one colour gives a solid rim. The points are the direction of the light, so they are not mirrored in right-to-left layouts.
+- **Shadow.** Both capsules cast it, and it is drawn only outside them, the way a design tool draws a drop shadow: under a translucent capsule it would show through and grey the whole capsule.
+- **Content insets.** Left and right are physical, as with Classic's `contentInsets`. They scale with the bar when it minimizes, and a tap that lands in them goes to the nearest tab rather than through the bar.
+
+The rim and the shadow work with either material, Reduce Transparency included, and follow the capsules frame by frame while the bar minimizes. Classic draws neither. The selection capsule is unaffected: a `.glass` selection stays visible over a blur — more so than over Liquid Glass, which it partly merges into — and the lens still appears while it moves.
 
 ### Transition motion
 
@@ -649,7 +685,7 @@ Read the current configuration with `currentConfiguration()` — a **method** ra
 | `motion` | transition durations, springs and fallbacks | ✅ (see below) |
 | `swipeSelectionMode` | how swipe selection works | ✅ |
 
-`motion`, `scrollConfiguration`, `classicAppearance` and `floatingGlassAppearance` are Swift-only value types; Objective-C reaches them through prefixed forwarding properties on `TeroTabBarConfiguration` — ten `motion*`, five `scroll*`, seven `classic*` and thirteen `floatingGlass*`, one per field:
+`motion`, `scrollConfiguration`, `classicAppearance` and `floatingGlassAppearance` are Swift-only value types; Objective-C reaches them through prefixed forwarding properties on `TeroTabBarConfiguration` — ten `motion*`, five `scroll*`, seven `classic*` and twenty-five `floatingGlass*`, one per field:
 
 ~~~objc
 configuration.motionSelectionDuration = 0.5;
@@ -666,6 +702,9 @@ configuration.classicUsesBlurEffect = NO;
 configuration.floatingGlassBottomInset = 21;
 configuration.floatingGlassTintMode = TeroTabGlassTintModeTinted;
 configuration.floatingGlassTintColor = UIColor.systemPinkColor;
+configuration.floatingGlassMaterial = TeroFloatingGlassMaterialBlur;
+configuration.floatingGlassRimWidth = 1;
+configuration.floatingGlassRimColors = @[UIColor.whiteColor, [UIColor.whiteColor colorWithAlphaComponent:0.2]];
 ~~~
 
 `itemAppearance` and `badgeAppearance` have no forwarding entry point beyond the two tint colours. When you need that detail from Objective-C, build the `TeroTabBarConfiguration` on the Swift side and hand it over.
@@ -706,7 +745,7 @@ cd Demo/ObjCDemo && xcodegen generate && open ObjCDemo.xcodeproj
 
 Demo project files are generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen); the repository keeps only `project.yml`.
 
-The demos accept launch arguments so screenshots can be automated: `--badges`, `--many-tabs`, `--style=floatingGlass`, `--state=minimized`, `--scrolled=300`, `--swipe=drag`, `--reset-settings`, `--instagram`.
+The demos accept launch arguments so screenshots can be automated: `--badges`, `--many-tabs`, `--style=floatingGlass`, `--state=minimized`, `--scrolled=300`, `--swipe=drag`, `--reset-settings`, `--instagram`, `--frosted`.
 
 **Settings persist across launches.** The Interaction Lab's motion preset, tab count, gesture mode and seven slider values, along with the main screen's swipe mode and style, are written to `UserDefaults` so you do not have to dial them in again. Three rules:
 

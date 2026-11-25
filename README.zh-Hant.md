@@ -127,7 +127,7 @@ Objective-C 專案透過從 git 安裝的 CocoaPods 或直接加入原始碼，�
 |---|---|
 | 相容性 | [需求](#需求) |
 | 安裝與 Swift／Objective-C 整合 | [安裝](#安裝) · [Swift](#swift) · [Objective-C](#objective-c) |
-| Tab 自訂 | [自訂 Tab 內容](#自訂-tab-內容) · [選取膠囊](#選取膠囊) · [頁面決定 Bar 的介面風格](#頁面決定-bar-的介面風格) |
+| Tab 自訂 | [自訂 Tab 內容](#自訂-tab-內容) · [選取膠囊](#選取膠囊) · [Bar 的材質](#bar-的材質) · [頁面決定 Bar 的介面風格](#頁面決定-bar-的介面風格) |
 | 互動式轉場 | [轉場的動態](#轉場的動態) · [滑動選取](#滑動選取) · [長按](#長按) |
 | 感知捲動的導覽 | [捲動驅動的收合](#捲動驅動的收合) · [收合](#收合) |
 | Navigation Container | [Navigation Container](#navigation-container) · [頂部 Chrome](#頂部-chrome) · [鏡射 `UINavigationItem`](#鏡射-uinavigationitem) |
@@ -308,6 +308,42 @@ tab.item.selectionSize = CGSize(width: 60, height: 40)
 顏色有兩個值，因為兩種材質需要**相反方向**的對比：`selectionIndicatorColor` 是實色的填色，`selectionIndicatorGlassTint` 是玻璃的 tint。玻璃的 tint 會被宿主材質吸收，淺色模式下白色 tint 不論多高的不透明度都浮不出來，所以它預設在淺色模式偏暗、深色模式偏亮。想同色的話把兩個值設成一樣即可。
 
 **`selectionIndicatorColor` 的預設假設宿主膠囊不是淺色的。** 把 `floatingGlassAppearance.glassTintColor` 調成淺色（例如白色 70%）之後就成了白疊白：某個上線 App 實測膠囊與宿主的平均色差只有 13.3，看起來就是糊成一塊；同一個版面改成中性灰 30% 之後是 26.3，對比翻倍而且不必動用玻璃。**宿主的 tint 改淺色時，`selectionIndicatorColor` 要跟著調。** 這與上一段玻璃 tint 的理由同源，只是方向相反。
+
+### Bar 的材質
+
+FloatingGlass 的兩顆膠囊是 Liquid Glass。Liquid Glass 會依背後的內容自動調整，在深色照片上會變成偏暗、偏灰的玻璃；tint 只能讓上面那層顏色變厚或變薄。設計要 Bar 在任何內容上都長得一樣時，把膠囊改成模糊，再用內緣的一圈亮邊和外陰影做出立體感。四組設定各自獨立，預設都不開：
+
+~~~swift
+// 材質：模糊加上半透明的填色
+configuration.floatingGlassAppearance.material = .blur                   // 預設 .liquidGlass
+configuration.floatingGlassAppearance.blurEffectStyle = .systemUltraThinMaterialLight
+configuration.floatingGlassAppearance.blurFillColor = UIColor.white.withAlphaComponent(0.3)
+
+// 內緣 1pt 的亮邊：左上最亮、中段最暗
+configuration.floatingGlassAppearance.rimWidth = 1                       // 0 = 沒有亮邊
+configuration.floatingGlassAppearance.rimColors = [
+    UIColor.white.withAlphaComponent(0.7),
+    UIColor.white.withAlphaComponent(0.1),
+    UIColor.white.withAlphaComponent(0.45),
+]
+configuration.floatingGlassAppearance.rimStartPoint = CGPoint(x: 0, y: 0) // 膠囊的單位座標
+configuration.floatingGlassAppearance.rimEndPoint = CGPoint(x: 1, y: 1)
+
+// 淡淡的外陰影
+configuration.floatingGlassAppearance.shadowOpacity = 0.06               // 0 = 沒有陰影
+configuration.floatingGlassAppearance.shadowOffset = CGSize(width: 0, height: 4)
+configuration.floatingGlassAppearance.shadowRadius = 10
+
+// 膠囊邊緣與 Tab 之間的內距
+configuration.floatingGlassAppearance.contentInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
+~~~
+
+- **材質**：`.blur` 時兩顆膠囊各自模糊、不會融合，所以 `glassTintMode`、`glassTintColor`、`glassContainerSpacing` 不生效。「降低透明度」開啟時退回 `blurFillColor` 的不透明版本，沒設填色就是 `systemBackground`。
+- **亮邊**：沿著兩顆膠囊的內緣，畫在 Tab 之上，不吃點擊。顏色從 `rimStartPoint` 到 `rimEndPoint` 平均分布；一個顏色就是單色。起訖點是光源的方向，RTL 不鏡像。
+- **陰影**：兩顆膠囊都有，而且只畫在膠囊外面，跟設計工具的外陰影一樣。半透明的膠囊底下如果也有陰影，會透出來把整顆膠囊染灰。
+- **內距**：左右是實體的左右，與 Classic 的 `contentInsets` 相同。Bar 最小化時跟著等比縮放；點在內距那一段算最近的那一格，不會穿過 Bar。
+
+亮邊與陰影兩種材質都能用，「降低透明度」時照畫，最小化途中逐幀跟著膠囊走。Classic 兩者都不畫。選取膠囊不受影響：`.glass` 的選取外框在模糊上看得到，而且比在 Liquid Glass 上明顯（在 Liquid Glass 上它會跟宿主融掉一部分），移動中的透鏡也照常出現。
 
 ### 轉場的動態
 
@@ -649,7 +685,7 @@ extension ProfileViewController: TeroNavigationChromeProviding {
 | `motion` | 選取轉場的時長、彈簧與降級方式 | ✅（見下） |
 | `swipeSelectionMode` | 滑動選取的操作方式 | ✅ |
 
-`motion`、`scrollConfiguration`、`classicAppearance`、`floatingGlassAppearance` 都是 Swift-only 的值型別，Objective-C 透過 `TeroTabBarConfiguration` 上帶前綴的轉發屬性存取——`motion*` 十個、`scroll*` 五個、`classic*` 七個、`floatingGlass*` 十三個，每個欄位一個：
+`motion`、`scrollConfiguration`、`classicAppearance`、`floatingGlassAppearance` 都是 Swift-only 的值型別，Objective-C 透過 `TeroTabBarConfiguration` 上帶前綴的轉發屬性存取——`motion*` 十個、`scroll*` 五個、`classic*` 七個、`floatingGlass*` 二十五個，每個欄位一個：
 
 ~~~objc
 configuration.motionSelectionDuration = 0.5;
@@ -666,6 +702,9 @@ configuration.classicUsesBlurEffect = NO;
 configuration.floatingGlassBottomInset = 21;
 configuration.floatingGlassTintMode = TeroTabGlassTintModeTinted;
 configuration.floatingGlassTintColor = UIColor.systemPinkColor;
+configuration.floatingGlassMaterial = TeroFloatingGlassMaterialBlur;
+configuration.floatingGlassRimWidth = 1;
+configuration.floatingGlassRimColors = @[UIColor.whiteColor, [UIColor.whiteColor colorWithAlphaComponent:0.2]];
 ~~~
 
 `itemAppearance` 與 `badgeAppearance` 除了兩個主色之外沒有轉發入口——需要那些細部時，在 Swift 端建好 `TeroTabBarConfiguration` 再交給 Objective-C 使用。
@@ -706,7 +745,7 @@ cd Demo/ObjCDemo && xcodegen generate && open ObjCDemo.xcodeproj
 
 Demo 的專案檔以 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 產生，repo 只保留 `project.yml`。
 
-Demo 支援啟動參數以便自動化截圖：`--badges`、`--many-tabs`、`--style=floatingGlass`、`--state=minimized`、`--scrolled=300`、`--swipe=drag`、`--reset-settings`、`--instagram`。
+Demo 支援啟動參數以便自動化截圖：`--badges`、`--many-tabs`、`--style=floatingGlass`、`--state=minimized`、`--scrolled=300`、`--swipe=drag`、`--reset-settings`、`--instagram`、`--frosted`。
 
 **設定會存下來，重啟後沿用。** Interaction Lab 的手感預設、Tab 數、操作方式與七個滑桿值，以及主畫面的滑動模式與 Style 都寫進 `UserDefaults`，調好之後重開 App 不必重來。規則有三條：
 
