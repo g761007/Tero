@@ -53,6 +53,15 @@ import Foundation
     case tinted
 }
 
+/// FloatingGlass 膠囊的材質（issue #13）。
+@objc public enum TeroFloatingGlassMaterial: Int {
+    /// 系統的 Liquid Glass（`UIGlassEffect`）。預設值。
+    case liquidGlass
+    /// `UIBlurEffect`，樣式取 `blurEffectStyle`，上面再疊 `blurFillColor`。
+    /// 外觀固定，不像 Liquid Glass 會依背後的內容變深。
+    case blur
+}
+
 /// FloatingGlass 最小化時的版面（issue #93）。
 @objc public enum TeroTabMinimizedLayout: Int {
     /// 整條 Bar 單一等比縮小，所有格位保留、標題隱藏。1.x 與 2.0 的行為，預設值。

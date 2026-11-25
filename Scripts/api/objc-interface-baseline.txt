@@ -105,15 +105,27 @@
   TeroTabBarConfiguration.defaultConfiguration
   TeroTabBarConfiguration.floatingGlassActionSize
   TeroTabBarConfiguration.floatingGlassActionSpacing
+  TeroTabBarConfiguration.floatingGlassBlurEffectStyle
+  TeroTabBarConfiguration.floatingGlassBlurFillColor
   TeroTabBarConfiguration.floatingGlassBottomInset
   TeroTabBarConfiguration.floatingGlassContainerSpacing
+  TeroTabBarConfiguration.floatingGlassContentInsets
   TeroTabBarConfiguration.floatingGlassCornerRadius
   TeroTabBarConfiguration.floatingGlassExpandedHeight
   TeroTabBarConfiguration.floatingGlassHidesTitlesWhenMinimized
   TeroTabBarConfiguration.floatingGlassHorizontalInset
+  TeroTabBarConfiguration.floatingGlassMaterial
   TeroTabBarConfiguration.floatingGlassMinimizedCornerRadius
   TeroTabBarConfiguration.floatingGlassMinimizedHeight
   TeroTabBarConfiguration.floatingGlassMinimizedLayout
+  TeroTabBarConfiguration.floatingGlassRimColors
+  TeroTabBarConfiguration.floatingGlassRimEndPoint
+  TeroTabBarConfiguration.floatingGlassRimStartPoint
+  TeroTabBarConfiguration.floatingGlassRimWidth
+  TeroTabBarConfiguration.floatingGlassShadowColor
+  TeroTabBarConfiguration.floatingGlassShadowOffset
+  TeroTabBarConfiguration.floatingGlassShadowOpacity
+  TeroTabBarConfiguration.floatingGlassShadowRadius
   TeroTabBarConfiguration.floatingGlassTintColor
   TeroTabBarConfiguration.floatingGlassTintMode
   TeroTabBarConfiguration.init
@@ -227,6 +239,7 @@ class TeroTabItem
 class TeroTabLayoutConfiguration
 class TeroTabMoreItem
 enum TeroChromeScrollBehavior
+enum TeroFloatingGlassMaterial
 enum TeroNavigationButtonMaterial
 enum TeroTabBadgeStyle
 enum TeroTabBarPresentationState

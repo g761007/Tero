@@ -114,9 +114,10 @@ final class SelectionTransitionTests: TeroTabBarControllerTestCase {
         // 轉場中疊上去的透鏡本來就必須不吃觸控，否則它會擋住底下的 Tab。
         // §14 要的是「還能操作」，不是「每一層都吃觸控」——後者由
         // `test_tappingDuringATransitionSelectsImmediately` 與 SelectionLensTests 守住。
+        // 膠囊的外陰影（issue #13）同理：它是裝飾，鋪滿整條 Bar，吃觸控就會擋住點擊。
         XCTAssertTrue(
             controller.tabBar.subviews
-                .filter { !($0 is TeroTabSelectionIndicatorView) }
+                .filter { !($0 is TeroTabSelectionIndicatorView) && !($0 is TeroCapsuleShadowView) }
                 .allSatisfy { $0.isUserInteractionEnabled }
         )
     }

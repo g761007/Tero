@@ -219,6 +219,43 @@ final class ConfigurationOwnershipTests: TeroTabBarControllerTestCase {
         XCTAssertEqual(appearance.glassTintColor, .systemTeal)
     }
 
+    /// issue #13 的四組設定。
+    func test_objectiveCFloatingMaterialProxiesForwardToFloatingGlassAppearance() {
+        let configuration = TeroTabBarConfiguration.defaultConfiguration()
+
+        configuration.floatingGlassMaterial = .blur
+        configuration.floatingGlassBlurEffectStyle = .systemThinMaterialDark
+        configuration.floatingGlassBlurFillColor = .systemTeal
+        configuration.floatingGlassRimWidth = 1.5
+        configuration.floatingGlassRimColors = [.white, .gray]
+        configuration.floatingGlassRimStartPoint = CGPoint(x: 0.5, y: 0)
+        configuration.floatingGlassRimEndPoint = CGPoint(x: 0.5, y: 1)
+        configuration.floatingGlassShadowColor = .systemIndigo
+        configuration.floatingGlassShadowOpacity = 0.12
+        configuration.floatingGlassShadowOffset = CGSize(width: 1, height: 3)
+        configuration.floatingGlassShadowRadius = 7
+        configuration.floatingGlassContentInsets = UIEdgeInsets(top: 1, left: 2, bottom: 3, right: 4)
+
+        let appearance = configuration.floatingGlassAppearance
+        XCTAssertEqual(appearance.material, .blur)
+        XCTAssertEqual(appearance.blurEffectStyle, .systemThinMaterialDark)
+        XCTAssertEqual(appearance.blurFillColor, .systemTeal)
+        XCTAssertEqual(appearance.rimWidth, 1.5)
+        XCTAssertEqual(appearance.rimColors, [.white, .gray])
+        XCTAssertEqual(appearance.rimStartPoint, CGPoint(x: 0.5, y: 0))
+        XCTAssertEqual(appearance.rimEndPoint, CGPoint(x: 0.5, y: 1))
+        XCTAssertEqual(appearance.shadowColor, .systemIndigo)
+        XCTAssertEqual(appearance.shadowOpacity, 0.12)
+        XCTAssertEqual(appearance.shadowOffset, CGSize(width: 1, height: 3))
+        XCTAssertEqual(appearance.shadowRadius, 7)
+        XCTAssertEqual(appearance.contentInsets, UIEdgeInsets(top: 1, left: 2, bottom: 3, right: 4))
+
+        XCTAssertEqual(configuration.floatingGlassMaterial, .blur)
+        XCTAssertEqual(configuration.floatingGlassRimColors, [.white, .gray])
+        XCTAssertEqual(configuration.floatingGlassShadowOpacity, 0.12)
+        XCTAssertEqual(configuration.floatingGlassContentInsets, UIEdgeInsets(top: 1, left: 2, bottom: 3, right: 4))
+    }
+
     func test_appearanceProxiesSurviveTheConfigurationDeepCopy() {
         let configuration = TeroTabBarConfiguration.defaultConfiguration()
         configuration.scrollBehavior = .minimizeOnScrollDown

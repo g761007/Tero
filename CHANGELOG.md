@@ -2,6 +2,18 @@
 
 Notable changes to Tero, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and version numbers follow the rules in the README's [API stability](README.md#api-stability) section.
 
+## [2.2.0] - 2026-11-25
+
+### Added
+
+FloatingGlass can draw its capsules with a blur instead of Liquid Glass, and give them a rim and a drop shadow. Four groups of settings on `TeroFloatingGlassAppearance`, each independent and off by default: a configuration that sets none of them looks exactly as it did in 2.1. ([#13](https://github.com/g761007/Tero/issues/13))
+
+- `material`: `.liquidGlass`, the default, or `.blur` — a `UIBlurEffect` of `blurEffectStyle` with `blurFillColor` on top. Liquid Glass adapts to the content behind it, and a tint only makes its colour thicker or thinner; a blur looks the same over any content. With `.blur` the two capsules do not merge, so `glassTintMode`, `glassTintColor` and `glassContainerSpacing` have no effect, and Reduce Transparency falls back to `blurFillColor` made opaque, or to `systemBackground`.
+- `rimWidth`, `rimColors`, `rimStartPoint` and `rimEndPoint`: a gradient rim along the inner edge of both capsules, drawn above the tabs. It takes no touches, follows the capsules while the bar minimizes, and is not mirrored in right-to-left layouts, since the points are the direction of the light.
+- `shadowOpacity`, `shadowColor`, `shadowOffset` and `shadowRadius`: a drop shadow cast by both capsules. It is drawn only outside them, so it does not show through a translucent capsule and grey it.
+- `contentInsets`: room between the tabs capsule's edge and the tabs, physical left and right as with Classic's `contentInsets`, scaled with the bar when it minimizes. A tap that lands in it goes to the nearest tab instead of through the bar.
+- Objective-C sets all twelve through `floatingGlass…` properties on `TeroTabBarConfiguration`, and the material through `TeroFloatingGlassMaterial`.
+
 ## [2.1.3] - 2026-11-25
 
 ### Fixed
@@ -51,6 +63,7 @@ Notable changes to Tero, newest first. The format follows [Keep a Changelog](htt
 
 First release from this repository.
 
+[2.2.0]: https://github.com/g761007/Tero/compare/2.1.3...2.2.0
 [2.1.3]: https://github.com/g761007/Tero/compare/2.1.2...2.1.3
 [2.1.2]: https://github.com/g761007/Tero/compare/2.1.1...2.1.2
 [2.1.1]: https://github.com/g761007/Tero/compare/2.1.0...2.1.1

@@ -279,6 +279,78 @@ public final class TeroTabBarConfiguration: NSObject, NSCopying {
         set { floatingGlassAppearance.glassTintColor = newValue }
     }
 
+    /// 轉發至 `floatingGlassAppearance.material`。
+    @objc public var floatingGlassMaterial: TeroFloatingGlassMaterial {
+        get { floatingGlassAppearance.material }
+        set { floatingGlassAppearance.material = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.blurEffectStyle`。
+    @objc public var floatingGlassBlurEffectStyle: UIBlurEffect.Style {
+        get { floatingGlassAppearance.blurEffectStyle }
+        set { floatingGlassAppearance.blurEffectStyle = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.blurFillColor`。
+    @objc public var floatingGlassBlurFillColor: UIColor? {
+        get { floatingGlassAppearance.blurFillColor }
+        set { floatingGlassAppearance.blurFillColor = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.rimWidth`。
+    @objc public var floatingGlassRimWidth: CGFloat {
+        get { floatingGlassAppearance.rimWidth }
+        set { floatingGlassAppearance.rimWidth = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.rimColors`。
+    @objc public var floatingGlassRimColors: [UIColor] {
+        get { floatingGlassAppearance.rimColors }
+        set { floatingGlassAppearance.rimColors = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.rimStartPoint`。
+    @objc public var floatingGlassRimStartPoint: CGPoint {
+        get { floatingGlassAppearance.rimStartPoint }
+        set { floatingGlassAppearance.rimStartPoint = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.rimEndPoint`。
+    @objc public var floatingGlassRimEndPoint: CGPoint {
+        get { floatingGlassAppearance.rimEndPoint }
+        set { floatingGlassAppearance.rimEndPoint = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.shadowOpacity`。
+    @objc public var floatingGlassShadowOpacity: Float {
+        get { floatingGlassAppearance.shadowOpacity }
+        set { floatingGlassAppearance.shadowOpacity = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.shadowColor`。
+    @objc public var floatingGlassShadowColor: UIColor {
+        get { floatingGlassAppearance.shadowColor }
+        set { floatingGlassAppearance.shadowColor = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.shadowOffset`。
+    @objc public var floatingGlassShadowOffset: CGSize {
+        get { floatingGlassAppearance.shadowOffset }
+        set { floatingGlassAppearance.shadowOffset = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.shadowRadius`。
+    @objc public var floatingGlassShadowRadius: CGFloat {
+        get { floatingGlassAppearance.shadowRadius }
+        set { floatingGlassAppearance.shadowRadius = newValue }
+    }
+
+    /// 轉發至 `floatingGlassAppearance.contentInsets`。
+    @objc public var floatingGlassContentInsets: UIEdgeInsets {
+        get { floatingGlassAppearance.contentInsets }
+        set { floatingGlassAppearance.contentInsets = newValue }
+    }
+
     @objc public override init() {
         self.compact = TeroTabLayoutConfiguration()
         self.regular = TeroTabLayoutConfiguration()
