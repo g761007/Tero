@@ -42,6 +42,9 @@ enum DemoLaunchOptions {
         arguments.first { $0.hasPrefix("--case=") }?.replacingOccurrences(of: "--case=", with: "")
     }
 
+    /// `--frosted`：FloatingGlass 改用模糊材質，加上亮邊、外陰影與內距（issue #13）。
+    static var usesFrostedMaterial: Bool { arguments.contains("--frosted") }
+
     /// `--state=expanded` / `--state=minimized` / `--state=hidden`
     static var presentationStateName: String? {
         arguments.first { $0.hasPrefix("--state=") }?.replacingOccurrences(of: "--state=", with: "")

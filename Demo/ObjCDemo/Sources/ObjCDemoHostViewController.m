@@ -45,6 +45,20 @@
     configuration.scrollBehavior = TeroTabBarScrollBehaviorHideOnScrollDown;
     configuration.classicBarHeight = 52;
     configuration.floatingGlassMinimizedHeight = 40;
+    // 浮動膠囊的材質、亮邊、陰影與內距（issue #13），`--frosted` 時才開。寫在這裡同樣是
+    // 為了讓 source drop 編到這些轉發屬性，包括 enum 與 NSArray<UIColor *>。
+    if ([NSProcessInfo.processInfo.arguments containsObject:@"--frosted"]) {
+        configuration.floatingGlassMaterial = TeroFloatingGlassMaterialBlur;
+        configuration.floatingGlassBlurEffectStyle = UIBlurEffectStyleSystemUltraThinMaterial;
+        configuration.floatingGlassBlurFillColor = [UIColor.whiteColor colorWithAlphaComponent:0.3];
+        configuration.floatingGlassRimWidth = 1;
+        configuration.floatingGlassRimColors = @[
+            [UIColor.whiteColor colorWithAlphaComponent:0.7],
+            [UIColor.whiteColor colorWithAlphaComponent:0.1],
+        ];
+        configuration.floatingGlassShadowOpacity = 0.08;
+        configuration.floatingGlassContentInsets = UIEdgeInsetsMake(0, 2, 0, 2);
+    }
 
     self.tabController = [[TeroTabBarController alloc] initWithConfiguration:configuration];
     self.tabController.delegate = self;

@@ -45,6 +45,9 @@ final class DemoHostViewController: UIViewController {
         configuration.style = usesFloatingGlass ? .floatingGlass : .classic
         configuration.compact.maximumVisibleItems = 5
         configuration.regular.maximumVisibleItems = 6
+        if DemoLaunchOptions.usesFrostedMaterial {
+            Self.applyFrostedMaterial(to: &configuration.floatingGlassAppearance)
+        }
         self.tabController = TeroTabBarController(configuration: configuration)
         super.init(nibName: nil, bundle: nil)
     }
@@ -133,7 +136,11 @@ final class DemoHostViewController: UIViewController {
         badgeButton.setTitle("切換 Badge", for: .normal)
         badgeButton.addTarget(self, action: #selector(toggleBadges), for: .touchUpInside)
 
-        let actionRow = UIStackView(arrangedSubviews: [reloadButton, clearButton, snapshotButton])
+        let materialButton = UIButton(type: .system)
+        materialButton.setTitle("材質", for: .normal)
+        materialButton.addTarget(self, action: #selector(toggleMaterial), for: .touchUpInside)
+
+        let actionRow = UIStackView(arrangedSubviews: [reloadButton, clearButton, snapshotButton, materialButton])
         actionRow.distribution = .fillEqually
 
         let expandButton = UIButton(type: .system)
@@ -410,6 +417,40 @@ final class DemoHostViewController: UIViewController {
         tabController.applyConfiguration(update, animated: true)
         journal.record("applyConfiguration → 上限 \(update.compact.maximumVisibleItems)、主色已換")
         refresh()
+    }
+
+    /// FloatingGlass 的材質在 Liquid Glass 與模糊之間切換（issue #13）。
+    @objc private func toggleMaterial() {
+        let update = tabController.currentConfiguration()
+        if update.floatingGlassAppearance.material == .blur {
+            update.floatingGlassAppearance.material = .liquidGlass
+            update.floatingGlassAppearance.blurFillColor = nil
+            update.floatingGlassAppearance.rimWidth = 0
+            update.floatingGlassAppearance.shadowOpacity = 0
+            update.floatingGlassAppearance.contentInsets = .zero
+        } else {
+            Self.applyFrostedMaterial(to: &update.floatingGlassAppearance)
+        }
+        tabController.applyConfiguration(update, animated: true)
+        let name = update.floatingGlassAppearance.material == .blur ? "模糊＋亮邊＋陰影" : "Liquid Glass"
+        journal.record("材質 ← \(name)（只有 FloatingGlass 看得到）")
+    }
+
+    /// 固定外觀的毛玻璃：模糊加半透明填色、內緣亮邊、淡淡的外陰影、左右 2pt 內距。
+    private static func applyFrostedMaterial(to appearance: inout TeroFloatingGlassAppearance) {
+        appearance.material = .blur
+        appearance.blurEffectStyle = .systemUltraThinMaterial
+        appearance.blurFillColor = UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.06) : UIColor.white.withAlphaComponent(0.3) }
+        appearance.rimWidth = 1
+        appearance.rimColors = [0.7, 0.1, 0.45].map { alpha in
+            UIColor { $0.userInterfaceStyle == .dark
+                ? UIColor.white.withAlphaComponent(alpha / 2) : UIColor.white.withAlphaComponent(alpha) }
+        }
+        appearance.shadowOpacity = 0.08
+        appearance.shadowOffset = CGSize(width: 0, height: 4)
+        appearance.shadowRadius = 10
+        appearance.contentInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
     }
 
     @objc private func expand() { applyState(.expanded) }
