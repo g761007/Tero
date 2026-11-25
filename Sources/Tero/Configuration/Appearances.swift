@@ -130,8 +130,60 @@ public struct TeroFloatingGlassAppearance {
     /// 之間；非選取格隨進度淡出到摸不到。那顆膠囊上只有一格，點它是展開不是重選，
     /// `.drag` 在這個狀態下也不動。
     public var minimizedLayout: TeroTabMinimizedLayout = .uniform
+    /// 只在 `material` 是 `.liquidGlass` 時生效。
     public var glassTintMode: TeroTabGlassTintMode = .automatic
+    /// 只在 `material` 是 `.liquidGlass` 時生效。
     public var glassTintColor: UIColor?
+
+    // MARK: 材質（issue #13）
+
+    /// 兩顆膠囊的材質。`.blur` 時兩顆膠囊不會融合，`glassTintMode`、`glassTintColor`、
+    /// `glassContainerSpacing` 都不生效。
+    ///
+    /// 「降低透明度」開啟時兩種材質都退回不透明實色（ADR-0006）：`.blur` 取
+    /// `blurFillColor` 的不透明版本，沒有就是 `systemBackground`。
+    public var material: TeroFloatingGlassMaterial = .liquidGlass
+    /// `material` 是 `.blur` 時的模糊樣式。
+    public var blurEffectStyle: UIBlurEffect.Style = .systemUltraThinMaterial
+    /// `material` 是 `.blur` 時疊在模糊上的填色，通常是半透明的。`nil` 就只有模糊。
+    public var blurFillColor: UIColor?
+
+    // MARK: 內緣亮邊
+
+    /// 膠囊內緣一圈亮邊的寬度，兩顆膠囊都有。0 就沒有亮邊。
+    ///
+    /// 亮邊畫在項目之上，只佔邊緣那一圈，不吃點擊。它與材質各自獨立，`.liquidGlass` 也畫。
+    public var rimWidth: CGFloat = 0
+    /// 亮邊的漸層色，沿 `rimStartPoint` 到 `rimEndPoint` 平均分布。一個顏色就是單色；
+    /// 沒有顏色就沒有亮邊。
+    public var rimColors: [UIColor] = []
+    /// 漸層的起點，膠囊的單位座標：(0, 0) 是左上角，(1, 1) 是右下角。
+    ///
+    /// 這是光源的方向，RTL 不鏡像。
+    public var rimStartPoint = CGPoint(x: 0, y: 0)
+    /// 漸層的終點，膠囊的單位座標。
+    public var rimEndPoint = CGPoint(x: 1, y: 1)
+
+    // MARK: 外陰影
+
+    /// 膠囊外陰影的不透明度。0 就沒有陰影。
+    ///
+    /// 陰影只畫在膠囊外面，跟設計工具的外陰影一樣：半透明的膠囊底下沒有陰影，
+    /// 否則整顆膠囊會被染灰。兩顆膠囊都有，與材質各自獨立。
+    public var shadowOpacity: Float = 0
+    public var shadowColor: UIColor = .black
+    public var shadowOffset = CGSize(width: 0, height: 4)
+    /// 陰影的模糊半徑，與 `CALayer.shadowRadius` 相同。
+    public var shadowRadius: CGFloat = 10
+
+    // MARK: 項目區內距
+
+    /// Tabs 膠囊裡項目區的內距，與 Classic 的 `contentInsets` 相同：左右是實體的左右，
+    /// RTL 不對調。
+    ///
+    /// 最小化時跟選取外框一樣，依 `minimizedHeight` 與 `expandedHeight` 的比例等比縮放。
+    /// 點在內距那一段算最近的那一格。
+    public var contentInsets: UIEdgeInsets = .zero
 
     public init() {}
 }

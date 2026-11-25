@@ -32,6 +32,7 @@
 @objc public dynamic private(set) var selectedIndex: Int = NSNotFound
 @objc public dynamic private(set) var selectedTab: TeroTab?
 @objc public enum TeroChromeScrollBehavior: Int
+@objc public enum TeroFloatingGlassMaterial: Int
 @objc public enum TeroNavigationButtonMaterial: Int
 @objc public enum TeroTabBadgeStyle: Int
 @objc public enum TeroTabBarPresentationState: Int
@@ -84,15 +85,27 @@
 @objc public var defaultButtonMaterial: TeroNavigationButtonMaterial = .automatic
 @objc public var floatingGlassActionSize: CGSize
 @objc public var floatingGlassActionSpacing: CGFloat
+@objc public var floatingGlassBlurEffectStyle: UIBlurEffect.Style
+@objc public var floatingGlassBlurFillColor: UIColor?
 @objc public var floatingGlassBottomInset: CGFloat
 @objc public var floatingGlassContainerSpacing: CGFloat
+@objc public var floatingGlassContentInsets: UIEdgeInsets
 @objc public var floatingGlassCornerRadius: CGFloat
 @objc public var floatingGlassExpandedHeight: CGFloat
 @objc public var floatingGlassHidesTitlesWhenMinimized: Bool
 @objc public var floatingGlassHorizontalInset: CGFloat
+@objc public var floatingGlassMaterial: TeroFloatingGlassMaterial
 @objc public var floatingGlassMinimizedCornerRadius: CGFloat
 @objc public var floatingGlassMinimizedHeight: CGFloat
 @objc public var floatingGlassMinimizedLayout: TeroTabMinimizedLayout
+@objc public var floatingGlassRimColors: [UIColor]
+@objc public var floatingGlassRimEndPoint: CGPoint
+@objc public var floatingGlassRimStartPoint: CGPoint
+@objc public var floatingGlassRimWidth: CGFloat
+@objc public var floatingGlassShadowColor: UIColor
+@objc public var floatingGlassShadowOffset: CGSize
+@objc public var floatingGlassShadowOpacity: Float
+@objc public var floatingGlassShadowRadius: CGFloat
 @objc public var floatingGlassTintColor: UIColor?
 @objc public var floatingGlassTintMode: TeroTabGlassTintMode
 @objc public var interactivePopGestureRecognizer: UIGestureRecognizer { edgePanRecognizer }
@@ -166,6 +179,8 @@
 @objcMembers public final class TeroTabMoreItem: NSObject, NSCopying
 TeroChromeScrollBehavior.case fixed
 TeroChromeScrollBehavior.case hidePrimary
+TeroFloatingGlassMaterial.case blur
+TeroFloatingGlassMaterial.case liquidGlass
 TeroNavigationButtonMaterial.case automatic
 TeroNavigationButtonMaterial.case glass
 TeroNavigationButtonMaterial.case plain
@@ -267,6 +282,8 @@ public var badgeAppearance = TeroTabBadgeAppearance()
 public var barHeight: CGFloat = 49
 public var behavior: TeroTabBarScrollBehavior = .none
 public var blurEffectStyle: UIBlurEffect.Style = .systemChromeMaterial
+public var blurEffectStyle: UIBlurEffect.Style = .systemUltraThinMaterial
+public var blurFillColor: UIColor?
 public var bottomInset: CGFloat = 21
 public var classicAppearance = TeroClassicTabBarAppearance()
 public var contentInsets: UIEdgeInsets = .zero
@@ -289,6 +306,7 @@ public var hidesTitlesWhenMinimized: Bool = true
 public var horizontalInset: CGFloat = 16
 public var image: UIImage?
 public var itemAppearance = TeroTabItemAppearance()
+public var material: TeroFloatingGlassMaterial = .liquidGlass
 public var maximumVisibleItems: Int = 5
 public var minimizeDuration: TimeInterval = 0.28
 public var minimizedCornerRadius: CGFloat = 18
@@ -306,6 +324,10 @@ public var preferredTeroTabVisibilityPolicy: TeroTabVisibilityPolicy
 public var reduceMotionBehavior: TeroTabReduceMotionBehavior = .crossFade
 public var reselectDuration: TimeInterval = 0.28
 public var restoreDuration: TimeInterval = 0.22
+public var rimColors: [UIColor] = []
+public var rimEndPoint = CGPoint(x: 1, y: 1)
+public var rimStartPoint = CGPoint(x: 0, y: 0)
+public var rimWidth: CGFloat = 0
 public var scrollConfiguration = TeroTabScrollConfiguration()
 public var selectedImage: UIImage?
 public var selectedTintColor: UIColor = .tintColor
@@ -324,6 +346,10 @@ public var selectionResponse: TimeInterval? = 0.4
 public var selectionSize: CGSize = .zero
 public var selectionStretch: CGFloat = 0.5
 public var separatorColor: UIColor? = .separator
+public var shadowColor: UIColor = .black
+public var shadowOffset = CGSize(width: 0, height: 4)
+public var shadowOpacity: Float = 0
+public var shadowRadius: CGFloat = 10
 public var style: TeroTabBadgeStyle = .dot
 public var teroTrackingScrollView: UIScrollView?
 public var textColor: UIColor = .white

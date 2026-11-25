@@ -53,12 +53,23 @@ internal struct TeroFloatingGlassLayoutEngine {
         let heightScale = appearance.expandedHeight > 0
             ? layout.capsuleHeight / appearance.expandedHeight
             : 1
-        // 只留選取格（issue #93）：膠囊縮成一顆小膠囊。寬度取選取格等比縮放後的寬，夾在高度的
-        // 1…1.6 倍之間——太窄像一顆點，太寬看不出「只剩一格」。
+        // 項目區內距（issue #13）：格位排在膠囊扣掉內距的範圍裡。最小化時跟選取外框一樣
+        // 依高度比例縮放。
+        let contentInsets = appearance.contentInsets
+        let scaledContentInsets = UIEdgeInsets(
+            top: contentInsets.top * heightScale, left: contentInsets.left * heightScale,
+            bottom: contentInsets.bottom * heightScale, right: contentInsets.right * heightScale
+        )
+        let expandedSlotWidth = itemCount > 0
+            ? max(0, expandedTabsWidth - contentInsets.left - contentInsets.right) / CGFloat(itemCount)
+            : 0
+        let expandedSlotHeight = max(0, appearance.expandedHeight - contentInsets.top - contentInsets.bottom)
+        // 只留選取格（issue #93）：膠囊縮成一顆小膠囊。寬度取選取格（連同左右內距）等比縮放後
+        // 的寬，夾在高度的 1…1.6 倍之間——太窄像一顆點，太寬看不出「只剩一格」。
         let selectedOnly = isMinimized && appearance.minimizedLayout == .selectedOnly && itemCount > 0
         let tabsWidth: CGFloat
         if selectedOnly {
-            let pill = expandedTabsWidth / CGFloat(itemCount) * heightScale
+            let pill = (expandedSlotWidth + contentInsets.left + contentInsets.right) * heightScale
             tabsWidth = min(maximumTabsWidth,
                             min(max(pill, layout.capsuleHeight), layout.capsuleHeight * 1.6).rounded())
         } else if isMinimized {
@@ -97,18 +108,20 @@ internal struct TeroFloatingGlassLayoutEngine {
         if selectedOnly {
             return selectedOnlyFrames(
                 into: layout, itemCount: itemCount, selectedIndex: selectedIndex, tabsWidth: tabsWidth,
-                expandedSlotWidth: expandedTabsWidth / CGFloat(itemCount), scale: heightScale,
-                appearance: appearance, selectionInsets: selectionInsets, selectionSizes: selectionSizes
+                expandedSlotWidth: expandedSlotWidth, expandedSlotHeight: expandedSlotHeight, scale: heightScale,
+                contentInsets: scaledContentInsets, selectionInsets: selectionInsets, selectionSizes: selectionSizes
             )
         }
-        let slotWidth = tabsWidth / CGFloat(itemCount)
+        let itemsArea = Self.inset(CGRect(x: 0, y: 0, width: tabsWidth, height: layout.capsuleHeight), by: scaledContentInsets)
+        let slotWidth = itemsArea.width / CGFloat(itemCount)
+        let slotHeight = itemsArea.height
         layout.itemFrames = (0..<itemCount).map { index in
             let slot = isRTL ? (itemCount - 1 - index) : index
             return CGRect(
-                x: CGFloat(slot) * slotWidth,
-                y: 0,
+                x: itemsArea.minX + CGFloat(slot) * slotWidth,
+                y: itemsArea.minY,
                 width: slotWidth,
-                height: layout.capsuleHeight
+                height: slotHeight
             ).integral
         }
         // 選取外框按**自己的**尺寸等比縮放，不是跟著格位縮。
@@ -116,7 +129,6 @@ internal struct TeroFloatingGlassLayoutEngine {
         // 跟著格位縮就是跟著格位一起變形——而格位是看不見的，使用者看見的是那顆膠囊。
         // 膠囊的寬現在與高用同一個比例（見上），所以等比縮放後的外框一定塞得進格位。
         let scale = heightScale
-        let expandedSlotWidth = expandedTabsWidth / CGFloat(itemCount)
 
         // 剩餘量按原本的左右／上下比例分配，非對稱內縮才不會被硬拉成置中。
         func distribute(_ total: CGFloat, _ near: CGFloat, _ far: CGFloat) -> (CGFloat, CGFloat) {
@@ -125,10 +137,10 @@ internal struct TeroFloatingGlassLayoutEngine {
             return (total * near / sum, total * far / sum)
         }
         let targetWidth = max(0, expandedSlotWidth - selectionInsets.left - selectionInsets.right) * scale
-        let targetHeight = max(0, appearance.expandedHeight - selectionInsets.top - selectionInsets.bottom) * scale
+        let targetHeight = max(0, expandedSlotHeight - selectionInsets.top - selectionInsets.bottom) * scale
         let (left, right) = distribute(max(0, slotWidth - targetWidth), selectionInsets.left, selectionInsets.right)
         let (top, bottom) = distribute(
-            max(0, layout.capsuleHeight - targetHeight), selectionInsets.top, selectionInsets.bottom
+            max(0, slotHeight - targetHeight), selectionInsets.top, selectionInsets.bottom
         )
 
         layout.selectionFrames = TeroTabSelectionGeometry.frames(
@@ -150,14 +162,16 @@ internal struct TeroFloatingGlassLayoutEngine {
         selectedIndex: Int?,
         tabsWidth: CGFloat,
         expandedSlotWidth: CGFloat,
+        expandedSlotHeight: CGFloat,
         scale: CGFloat,
-        appearance: TeroFloatingGlassAppearance,
+        contentInsets: UIEdgeInsets,
         selectionInsets: UIEdgeInsets,
         selectionSizes: [CGSize?]
     ) -> Layout {
         var layout = layout
         let selected = selectedIndex.flatMap { (0..<itemCount).contains($0) ? $0 : nil } ?? 0
-        let full = CGRect(x: 0, y: 0, width: tabsWidth, height: layout.capsuleHeight).integral
+        let full = Self.inset(CGRect(x: 0, y: 0, width: tabsWidth, height: layout.capsuleHeight), by: contentInsets)
+            .integral
         let collapsed = CGRect(x: (tabsWidth / 2).rounded(), y: 0, width: 0, height: layout.capsuleHeight)
         layout.itemFrames = (0..<itemCount).map { $0 == selected ? full : collapsed }
 
@@ -170,13 +184,20 @@ internal struct TeroFloatingGlassLayoutEngine {
             max(0, expandedSlotWidth - selectionInsets.left - selectionInsets.right) * scale,
             max(0, full.width - scaledInsets.left - scaledInsets.right)
         )
-        let targetHeight = max(0, appearance.expandedHeight - selectionInsets.top - selectionInsets.bottom) * scale
+        let targetHeight = max(0, expandedSlotHeight - selectionInsets.top - selectionInsets.bottom) * scale
         let size = requested.map { CGSize(width: min($0.width * scale, full.width), height: min($0.height * scale, full.height)) }
             ?? CGSize(width: targetWidth, height: targetHeight)
         let selection = TeroTabSelectionGeometry.frame(inSlot: full, requestedSize: size, insets: scaledInsets)
         let empty = CGRect(x: collapsed.midX, y: layout.capsuleHeight / 2, width: 0, height: 0)
         layout.selectionFrames = (0..<itemCount).map { $0 == selected ? selection : empty }
         return layout
+    }
+
+    /// `CGRect.inset(by:)` 扣過頭時寬高會變成負的，之後的 `minX` 又會把它翻正；這裡夾在 0。
+    private static func inset(_ rect: CGRect, by insets: UIEdgeInsets) -> CGRect {
+        CGRect(x: rect.origin.x + insets.left, y: rect.origin.y + insets.top,
+               width: max(0, rect.width - insets.left - insets.right),
+               height: max(0, rect.height - insets.top - insets.bottom))
     }
 
     internal static func interpolate(_ from: Layout, _ to: Layout, progress: CGFloat) -> Layout {

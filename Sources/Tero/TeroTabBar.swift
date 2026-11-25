@@ -105,6 +105,10 @@ public final class TeroTabBar: UIView {
     private let tabsCapsule = UIVisualEffectView(effect: nil)
     /// Action 的膠囊。只有 FloatingGlass 會用到——Classic 的 Action 在 Tabs 列的中央。
     private let actionCapsule = UIVisualEffectView(effect: nil)
+    /// 兩顆膠囊內緣的亮邊與玻璃容器後面的外陰影（issue #13）。只有 FloatingGlass 畫。
+    private let tabsRim = TeroCapsuleRimView()
+    private let actionRim = TeroCapsuleRimView()
+    private let capsuleShadow = TeroCapsuleShadowView()
     private let separator = UIView()
     private let itemsContainer = UIView()
     private let selectionIndicator = TeroTabSelectionIndicatorView()
@@ -147,11 +151,19 @@ public final class TeroTabBar: UIView {
     internal init(style: TeroTabBarStyle) {
         self.style = style
         super.init(frame: .zero)
+        addSubview(capsuleShadow)
         addSubview(glassContainer)
         glassContainer.contentView.addSubview(tabsCapsule)
         glassContainer.contentView.addSubview(actionCapsule)
         tabsCapsule.contentView.addSubview(separator)
         tabsCapsule.contentView.addSubview(itemsContainer)
+        // 亮邊跟著 contentView 縮放，不跟著膠囊的 frame：最小化途中 contentView 會對齊像素，
+        // 兩者差到零點幾 pt。
+        for (rim, capsule) in [(tabsRim, tabsCapsule), (actionRim, actionCapsule)] {
+            rim.frame = capsule.contentView.bounds
+            rim.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            capsule.contentView.addSubview(rim)
+        }
         itemsContainer.addSubview(selectionIndicator)
         // 透鏡疊在整個玻璃容器之上，Icon 才會落進它取樣的 backdrop。
         addSubview(selectionLens)
@@ -1223,29 +1235,60 @@ public final class TeroTabBar: UIView {
             hideSelectionLens()
 
         case .floatingGlass:
-            // FloatingGlass 只在 iOS 26 以上可達（ADR-0002），因此這裡一律用系統玻璃，
-            // 不存在以模糊效果仿製 Liquid Glass 的路徑。
+            // FloatingGlass 只在 iOS 26 以上可達（ADR-0002），iOS 26 以下沒有以模糊仿製
+            // Liquid Glass 的退回。`.blur` 是 App 在 iOS 26 以上自己選的另一種材質（issue #13）。
             if reducesTransparency {
                 applyOpaqueFallback()
+            } else if floatingAppearance.material == .blur {
+                applyBlur()
             } else {
                 applyGlass()
             }
             separator.isHidden = true
             actionCapsule.isHidden = (model.action == nil)
         }
+        applyDecorations()
         updateActionHost()
     }
 
     private func applyOpaqueFallback() {
         glassContainer.effect = nil
         glassContainer.contentView.backgroundColor = .clear
-        let opaque: UIColor = floatingAppearance.glassTintMode == .tinted
-            ? (floatingAppearance.glassTintColor ?? .systemBackground).withAlphaComponent(1)
-            : .systemBackground
+        let opaque: UIColor
+        switch floatingAppearance.material {
+        case .blur:
+            opaque = (floatingAppearance.blurFillColor ?? .systemBackground).withAlphaComponent(1)
+        case .liquidGlass:
+            opaque = floatingAppearance.glassTintMode == .tinted
+                ? (floatingAppearance.glassTintColor ?? .systemBackground).withAlphaComponent(1)
+                : .systemBackground
+        }
         for capsule in [tabsCapsule, actionCapsule] {
             capsule.effect = nil
             capsule.contentView.backgroundColor = opaque
         }
+    }
+
+    /// 兩顆膠囊各自模糊，不融合，所以外面不套玻璃容器。
+    private func applyBlur() {
+        glassContainer.effect = nil
+        glassContainer.contentView.backgroundColor = .clear
+        for capsule in [tabsCapsule, actionCapsule] {
+            capsule.effect = UIBlurEffect(style: floatingAppearance.blurEffectStyle)
+            capsule.contentView.backgroundColor = floatingAppearance.blurFillColor
+        }
+    }
+
+    /// 亮邊與外陰影與材質各自獨立，「降低透明度」時也照畫。
+    private func applyDecorations() {
+        let appearance = floatingAppearance
+        let floating = (style == .floatingGlass)
+        for rim in [tabsRim, actionRim] {
+            rim.apply(width: floating ? appearance.rimWidth : 0, colors: appearance.rimColors,
+                      startPoint: appearance.rimStartPoint, endPoint: appearance.rimEndPoint)
+        }
+        capsuleShadow.apply(opacity: floating ? appearance.shadowOpacity : 0, color: appearance.shadowColor,
+                            offset: appearance.shadowOffset, radius: appearance.shadowRadius)
     }
 
     private func applyGlass() {
@@ -1369,6 +1412,7 @@ public final class TeroTabBar: UIView {
         tabsCapsule.frame = layout.tabsCapsule
         tabsCapsule.layer.cornerRadius = layout.cornerRadius
         tabsCapsule.clipsToBounds = true
+        tabsRim.fit(cornerRadius: layout.cornerRadius, cornerCurve: tabsCapsule.layer.cornerCurve)
         separator.isHidden = true
 
         itemsContainer.frame = tabsCapsule.bounds
@@ -1391,12 +1435,24 @@ public final class TeroTabBar: UIView {
             actionCapsule.frame = actionFrame
             actionCapsule.layer.cornerRadius = min(actionFrame.width, actionFrame.height) / 2
             actionCapsule.clipsToBounds = true
+            actionRim.fit(cornerRadius: actionCapsule.layer.cornerRadius, cornerCurve: actionCapsule.layer.cornerCurve)
             actionView.frame = actionCapsule.bounds
             actionView.applyPresentation(progress: minimizationProgress,
                 iconSide: max(12, floatingAppearance.minimizedHeight - 12), hidesTitle: true)
         } else {
             actionCapsule.isHidden = true
         }
+        castCapsuleShadow()
+    }
+
+    /// 最小化是逐幀重排，陰影在這裡跟著膠囊走。
+    private func castCapsuleShadow() {
+        capsuleShadow.frame = bounds
+        guard !capsuleShadow.isHidden else { return }
+        let capsules = [tabsCapsule, actionCapsule].filter { !$0.isHidden }.map { capsule in
+            (frame: capsule.convert(capsule.bounds, to: capsuleShadow), cornerRadius: capsule.layer.cornerRadius)
+        }
+        capsuleShadow.cast(from: capsules)
     }
 
     public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -1416,9 +1472,28 @@ public final class TeroTabBar: UIView {
                     dy: -max(0, (44 - frame.height) / 2))
                 if hit.contains(point) { return control }
             }
-            return nil
+            return nearestSlot(toPointInTabsCapsule: point)
         }
         return super.hitTest(point, with: event)
+    }
+
+    /// 項目區內距（issue #13）讓膠囊邊緣有一段不屬於任何一格。那一段還是看得到的膠囊，
+    /// 點在那裡不能穿過 Bar 點到後面的頁面，算最近的那一格。
+    ///
+    /// 只管不在任何一格裡的點：落在停用的那一格就維持原樣，不轉給隔壁。
+    private func nearestSlot(toPointInTabsCapsule point: CGPoint) -> UIView? {
+        guard tabsCapsule.convert(tabsCapsule.bounds, to: self).contains(point),
+              !slotViews.contains(where: { !$0.isHidden && $0.convert($0.bounds, to: self).contains(point) })
+        else { return nil }
+        func distance(to control: UIView) -> CGFloat {
+            let frame = control.convert(control.bounds, to: self)
+            let dx = max(frame.minX - point.x, 0, point.x - frame.maxX)
+            let dy = max(frame.minY - point.y, 0, point.y - frame.maxY)
+            return dx * dx + dy * dy
+        }
+        return slotViews
+            .filter { $0.isEnabled && !$0.isHidden }
+            .min { distance(to: $0) < distance(to: $1) }
     }
 
     @objc private func itemTapped(_ sender: TeroTabItemView) {
